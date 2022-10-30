@@ -4,7 +4,7 @@ A v2ray backend framework that can easily support many panels.
 
 一个基于v2ray的后端框架，支持V2ay，Trojan协议，极易扩展，支持多面板对接。
 
-由于 `v2ray-core` 暂未支持shadowsocks的单端口多用户，所以现在无法使用。
+由于 [v2ray-core](https://github.com/v2fly/v2ray-core) 暂未支持shadowsocks的单端口多用户，所以现在无法使用。
 
 如果您喜欢本项目，可以右上角点个star+watch，持续关注本项目的进展。
 
