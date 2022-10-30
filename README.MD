@@ -66,7 +66,7 @@ A v2ray backend framework that can easily support many panels.
 
 ## Licence
 
-[Mozilla Public License Version 2.0](https://github.com/XrayR-project/XrayR/blob/master/LICENSE)
+[Mozilla Public License Version 2.0](https://raw.githubusercontent.com/thank243/v2rayS/master/LICENSE)
 
 ## Telegram
 
