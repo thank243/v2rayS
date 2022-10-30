@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package v2rays.app.mydispatcher;
+option csharp_namespace = "V2RayS.App.MyDispatcher";
+option go_package = "github.com/thank243/v2rayS/app/mydispatcher";
+option java_package = "com.v2rays.app.mydispatcher";
+option java_multiple_files = true;
+
+message SessionConfig {
+  reserved 1;
+}
+
+message Config {
+  SessionConfig settings = 1;
+}
