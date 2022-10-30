@@ -113,7 +113,7 @@ func (c *Controller) Start() error {
 		Execute:  c.userInfoMonitor,
 	}
 	c.renewCertPeriodic = &task.Periodic{
-		Interval: time.Duration(c.config.UpdatePeriodic) * time.Second * 10,
+		Interval: time.Duration(c.config.UpdatePeriodic) * time.Second * 60,
 		Execute:  c.certMonitor,
 	}
 	if c.config.AutoSpeedLimitConfig == nil {
@@ -260,12 +260,12 @@ func (c *Controller) nodeInfoMonitor() (err error) {
 	return nil
 }
 
-func (c *Controller) removeOldTag(oldtag string) (err error) {
-	err = c.removeInbound(oldtag)
+func (c *Controller) removeOldTag(oldTag string) (err error) {
+	err = c.removeInbound(oldTag)
 	if err != nil {
 		return err
 	}
-	err = c.removeOutbound(oldtag)
+	err = c.removeOutbound(oldTag)
 	if err != nil {
 		return err
 	}

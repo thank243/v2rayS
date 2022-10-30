@@ -18,7 +18,9 @@
     {
       "type": "field",
       "outboundTag": "socks5-warp",
-      "domain": []
+      "domain": [
+        "netflix.com"
+      ]
     },
     {
       "type": "field",
