@@ -30,6 +30,11 @@ Nodes:
       EnableDNS: false # Use custom DNS config, Please ensure that you set the dns.json well
       DNSType: AsIs # AsIs, UseIP, UseIPv4, UseIPv6, DNS strategy
       EnableProxyProtocol: false # Only works for WebSocket and TCP
+      AutoSpeedLimitConfig:
+        Limit: 0 # Warned speed. Set to 0 to disable AutoSpeedLimit (mbps)
+        WarnTimes: 0 # After (WarnTimes) consecutive warnings, the user will be limited. Set to 0 to punish overSpeed user immediately.
+        LimitSpeed: 0 # The speedlimit of a limited user (unit: mbps)
+        LimitDuration: 0 # How many minutes will the limiting last (unit: minute)
       FallBackConfigs: # Support multiple fallbacks
         - Alpn: # Alpn, Empty for any
           Path: # HTTP PATH, Empty for any
