@@ -21,9 +21,11 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/thank243/v2rayS/api"
+	"github.com/thank243/v2rayS/api/pmpanel"
+	"github.com/thank243/v2rayS/api/proxypanel"
 	"github.com/thank243/v2rayS/api/v2board"
+	"github.com/thank243/v2rayS/api/v2raysocks"
 	"github.com/thank243/v2rayS/app/mydispatcher"
-	_ "github.com/thank243/v2rayS/main/distro/all"
 	"github.com/thank243/v2rayS/service"
 	"github.com/thank243/v2rayS/service/controller"
 )
@@ -169,6 +171,12 @@ func (p *Panel) Start() {
 		switch nodeConfig.PanelType {
 		case "V2board":
 			apiClient = v2board.New(nodeConfig.ApiConfig)
+		case "PMpanel":
+			apiClient = pmpanel.New(nodeConfig.ApiConfig)
+		case "Proxypanel":
+			apiClient = proxypanel.New(nodeConfig.ApiConfig)
+		case "V2RaySocks":
+			apiClient = v2raysocks.New(nodeConfig.ApiConfig)
 		default:
 			panic(fmt.Sprintf("Unsupport panel type: %s", nodeConfig.PanelType))
 		}

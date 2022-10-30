@@ -14,6 +14,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 
+	_ "github.com/thank243/v2rayS/main/distro/all"
 	"github.com/thank243/v2rayS/panel"
 )
 
@@ -23,9 +24,9 @@ var (
 )
 
 var (
-	version  = "0.1.0"
+	version  = "0.2.0"
 	codename = "v2rayS"
-	intro    = "A v2ray backend that supports v2board"
+	intro    = "A v2ray backend that supports many panels"
 )
 
 func showVersion() {

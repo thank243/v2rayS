@@ -13,7 +13,7 @@ ConnectionConfig:
   DownlinkOnly: 4 # Time limit when the connection is closed after the uplink is closed, Second
   BufferSize: 64 # The internal cache size of each connection, kB 
 Nodes:
-  - PanelType: "V2board" # Panel type: V2board
+  - PanelType: "V2board" # Panel type: V2board, PMpanel, Proxypanel, V2RaySocks
     ApiConfig:
       ApiHost: "https://example.com"
       ApiKey: "YOUR TOKEN"
