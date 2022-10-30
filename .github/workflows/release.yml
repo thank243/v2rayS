@@ -124,15 +124,15 @@ jobs:
           mkdir -p build_assets
           go build -v -o build_assets/v2rayS -trimpath -ldflags "-s -w -buildid=" ./main
 
-      - name: Build Mips softfloat XrayR
+      - name: Build Mips softfloat v2rayS
         if: matrix.goarch == 'mips' || matrix.goarch == 'mipsle'
         run: |
           GOMIPS=softfloat go build -v -o build_assets/v2rayS_softfloat -trimpath -ldflags "-s -w -buildid=" ./main
-      - name: Rename Windows XrayR
+      - name: Rename Windows v2rayS
         if: matrix.goos == 'windows'
         run: |
           cd ./build_assets || exit 1
-          mv XrayR XrayR.exe
+          mv v2rayS v2rayS.exe
 
       - name: Prepare to release
         run: |
@@ -161,7 +161,7 @@ jobs:
         run: |
           pushd build_assets || exit 1
           touch -mt $(date +%Y01010000) *
-          zip -9vr ../XrayR-$ASSET_NAME.zip .
+          zip -9vr ../v2rayS-$ASSET_NAME.zip .
           popd || exit 1
           FILE=./v2rayS-$ASSET_NAME.zip
           DGST=$FILE.dgst
@@ -183,6 +183,6 @@ jobs:
         if: github.event_name == 'release'
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./XrayR-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
+          file: ./v2rayS-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
           tag: ${{ github.ref }}
           file_glob: true
