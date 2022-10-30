@@ -179,7 +179,7 @@ jobs:
           path: |
             ./v2rayS-${{ steps.get_filename.outputs.ASSET_NAME }}/*
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@main
+        uses: svenstaro/upload-release-action@latest
         if: github.event_name == 'release'
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
