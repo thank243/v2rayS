@@ -27,29 +27,30 @@ A v2ray backend framework that can easily support many panels.
 
 ## 功能介绍
 
-|    功能     | v2ray | trojan |
-|:---------:|:-----:|:------:|
-|  获取节点信息   |   √   |   √    | 
-|  获取用户信息   |   √   |   √    | 
-|  用户流量统计   |   √   |   √    | 
-|  服务器信息上报  |   √   |   √    | 
-| 自动申请tls证书 |   √   |   √    |
-| 自动续签tls证书 |   √   |   √    | 
-|  在线人数统计   |   √   |   √    | 
-|  在线用户限制   |   √   |   √    | 
-|   审计规则    |   √   |   √    |
-|  节点端口限速   |   √   |   √    |
-|  按照用户限速   |   √   |   √    |
-|  自定义DNS   |   √   |   √    |
+|    功能     |       v2ray        |       trojan       |
+|:---------:|:------------------:|:------------------:|
+|  获取节点信息   | :white_check_mark: | :white_check_mark: |
+|  获取用户信息   | :white_check_mark: | :white_check_mark: |
+|  用户流量统计   | :white_check_mark: | :white_check_mark: |
+|  服务器信息上报  | :white_check_mark: | :white_check_mark: |
+| 自动申请tls证书 | :white_check_mark: | :white_check_mark: |
+| 自动续签tls证书 | :white_check_mark: | :white_check_mark: |
+|  在线人数统计   | :white_check_mark: | :white_check_mark: |
+|  在线用户限制   | :white_check_mark: | :white_check_mark: |
+|   审计规则    | :white_check_mark: | :white_check_mark: |
+|  节点端口限速   | :white_check_mark: | :white_check_mark: |
+|  按照用户限速   | :white_check_mark: | :white_check_mark: |
+|  自定义DNS   | :white_check_mark: | :white_check_mark: |
+|  全局用户限制   |     :pushpin:      |     :pushpin:      |
 
 ## 支持前端
 
-|                                前端                                 | v2ray | trojan |
-|:-----------------------------------------------------------------:|:-----:|:------:|
-|                              v2board                              |   √   |   √    |
-|  ~~[PMPanel](https://github.com/ByteInternetHK/PMPanel)~~ （待开发）   |   √   |   √    |
-| ~~[ProxyPanel](https://github.com/ProxyPanel/ProxyPanel)~~  （待开发） |   √   |   √    |
-| ~~[WHMCS (V2RaySocks)](https://v2raysocks.doxtex.com/)~~   （待开发）  |   √   |   √    |
+|                           前端                           |       v2ray        |       trojan       |
+|:------------------------------------------------------:|:------------------:|:------------------:|
+|     [V2Board](https://github.com/v2board/v2board)      | :white_check_mark: | :white_check_mark: |
+|  [PMPanel](https://github.com/ByteInternetHK/PMPanel)  | :white_check_mark: | :white_check_mark: |
+| [ProxyPanel](https://github.com/ProxyPanel/ProxyPanel) | :white_check_mark: | :white_check_mark: |
+|  [WHMCS(V2RaySocks)](https://v2raysocks.doxtex.com/)   | :white_check_mark: | :white_check_mark: |
 
 ## 配置文件及详细使用教程
 
