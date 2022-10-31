@@ -10,6 +10,8 @@ A v2ray backend framework that can easily support many panels.
 
 教程参考：[XrayR使用教程](https://xrayr-project.github.io/XrayR-doc/)
 
+##
+
 ## 免责声明
 
 本项目只是本人个人学习开发并维护，本人不保证任何可用性，也不对使用本软件造成的任何后果负责。
@@ -51,6 +53,11 @@ A v2ray backend framework that can easily support many panels.
 |  [PMPanel](https://github.com/ByteInternetHK/PMPanel)  | :white_check_mark: | :white_check_mark: |
 | [ProxyPanel](https://github.com/ProxyPanel/ProxyPanel) | :white_check_mark: | :white_check_mark: |
 |  [WHMCS(V2RaySocks)](https://v2raysocks.doxtex.com/)   | :white_check_mark: | :white_check_mark: |
+
+## 软件安装
+只推荐docker compose安装
+
+[docker compose安装](https://github.com/thank243/v2rayS-install#%E5%8F%AA%E6%8E%A8%E8%8D%90-docker-compose-%E5%AE%89%E8%A3%85)
 
 ## 配置文件及详细使用教程
 
