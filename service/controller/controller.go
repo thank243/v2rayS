@@ -141,6 +141,7 @@ func (c *Controller) Start() error {
 	go time.AfterFunc(time.Duration(c.config.UpdatePeriodic)*time.Second, func() {
 		c.renewCertPeriodic.Start()
 	})
+
 	return nil
 }
 
@@ -382,34 +383,35 @@ func (c *Controller) addNewUser(userInfo *[]api.UserInfo, nodeInfo *api.NodeInfo
 }
 
 func compareUserList(old, new *[]api.UserInfo) (deleted, added []api.UserInfo) {
-	mapSrc := make(map[api.UserInfo]byte) // 按源数组建索引
-	mapAll := make(map[api.UserInfo]byte) // 源+目所有元素建索引
+	// init source user and target user map
+	srcMap := make(map[api.UserInfo]bool)
+	tarMap := make(map[api.UserInfo]bool)
 
-	var set []api.UserInfo // 交集
+	var intersection []api.UserInfo
 
-	// 1.源数组建立map
+	// create users map
 	for _, v := range *old {
-		mapSrc[v] = 0
-		mapAll[v] = 0
+		srcMap[v] = false
+		tarMap[v] = false
 	}
-	// 2.目数组中，存不进去，即重复元素，所有存不进去的集合就是并集
+
 	for _, v := range *new {
-		l := len(mapAll)
-		mapAll[v] = 1
-		if l != len(mapAll) { // 长度变化，即可以存
-			l = len(mapAll)
-		} else { // 存不了，进并集
-			set = append(set, v)
+		l := len(tarMap)
+		tarMap[v] = true
+		// if previous length == current then save to intersection
+		if l == len(tarMap) {
+			intersection = append(intersection, v)
 		}
 	}
-	// 3.遍历交集，在并集中找，找到就从并集中删，删完后就是补集（即并-交=所有变化的元素）
-	for _, v := range set {
-		delete(mapAll, v)
+
+	// delete element from intersection, The rest is the change element
+	for _, v := range intersection {
+		delete(tarMap, v)
 	}
-	// 4.此时，mapAll是补集，所有元素去源中找，找到就是删除的，找不到的必定能在目数组中找到，即新加的
-	for v := range mapAll {
-		_, exist := mapSrc[v]
-		if exist {
+
+	// range the change element. if the change element in source uses map, then delete else add
+	for v := range tarMap {
+		if _, ok := srcMap[v]; ok {
 			deleted = append(deleted, v)
 		} else {
 			added = append(added, v)

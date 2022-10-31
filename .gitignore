@@ -13,3 +13,4 @@ gen
 config.yaml
 config.yml
 cert
+*.dat
