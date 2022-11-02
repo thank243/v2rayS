@@ -54,13 +54,14 @@ func New(apiConfig *api.Config) *APIClient {
 		DeviceLimit:   apiConfig.DeviceLimit,
 		LocalRuleList: localRuleList,
 	}
+
 	return apiClient
 }
 
 // readLocalRuleList reads the local rule list file
 func readLocalRuleList(path string) (LocalRuleList []api.DetectRule) {
-
 	LocalRuleList = make([]api.DetectRule, 0)
+
 	if path != "" {
 		// open the file
 		file, err := os.Open(path)
@@ -83,7 +84,7 @@ func readLocalRuleList(path string) (LocalRuleList []api.DetectRule) {
 		// handle first encountered error while reading
 		if err := fileScanner.Err(); err != nil {
 			log.Fatalf("Error while reading file: %s", err)
-			return make([]api.DetectRule, 0)
+			return
 		}
 
 		file.Close()
@@ -125,6 +126,7 @@ func (c *APIClient) parseResponse(res *resty.Response, path string, err error) (
 // GetNodeInfo will pull NodeInfo Config from v2board
 func (c *APIClient) GetNodeInfo() (nodeInfo *api.NodeInfo, err error) {
 	var path string
+
 	switch c.NodeType {
 	case "V2ray":
 		path = apiSuffix + "/Deepbwork/config"
@@ -174,6 +176,7 @@ func (c *APIClient) GetNodeInfo() (nodeInfo *api.NodeInfo, err error) {
 // GetUserList will pull user form v2board
 func (c *APIClient) GetUserList() (UserList *[]api.UserInfo, err error) {
 	var path string
+
 	switch c.NodeType {
 	case "V2ray":
 		path = apiSuffix + "/Deepbwork/user"
@@ -215,6 +218,7 @@ func (c *APIClient) GetUserList() (UserList *[]api.UserInfo, err error) {
 		}
 		userList[i] = user
 	}
+
 	return &userList, nil
 }
 

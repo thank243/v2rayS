@@ -58,6 +58,7 @@ func New(server *core.Instance, api api.API, config *Config, panelType string) *
 		stm:        server.GetFeature(stats.ManagerType()).(stats.Manager),
 		dispatcher: server.GetFeature(routing.DispatcherType()).(*mydispatcher.DefaultDispatcher),
 	}
+
 	return controller
 }
 
@@ -160,6 +161,14 @@ func (c *Controller) Close() error {
 			log.Panicf("user report periodic close failed: %s", err)
 		}
 	}
+
+	if c.renewCertPeriodic != nil {
+		err := c.renewCertPeriodic.Close()
+		if err != nil {
+			log.Panicf("renew cert periodic close failed: %s", err)
+		}
+	}
+
 	return nil
 }
 
@@ -383,11 +392,10 @@ func (c *Controller) addNewUser(userInfo *[]api.UserInfo, nodeInfo *api.NodeInfo
 }
 
 func compareUserList(old, new *[]api.UserInfo) (deleted, added []api.UserInfo) {
-	// init source user and target user map
+	// init intersection slice, source user and target user map
+	var intersection []api.UserInfo
 	srcMap := make(map[api.UserInfo]bool)
 	tarMap := make(map[api.UserInfo]bool)
-
-	var intersection []api.UserInfo
 
 	// create users map
 	for _, v := range *old {
@@ -476,6 +484,7 @@ func (c *Controller) userInfoMonitor() (err error) {
 	AutoSpeedLimit := int64(c.config.AutoSpeedLimitConfig.Limit)
 	UpdatePeriodic := int64(c.config.UpdatePeriodic)
 	limitedUsers := make([]api.UserInfo, 0)
+
 	for _, user := range *c.userList {
 		up, down, upCounter, downCounter := c.getTraffic(c.buildUserTag(&user))
 		if up > 0 || down > 0 {
@@ -501,7 +510,8 @@ func (c *Controller) userInfoMonitor() (err error) {
 				UID:      user.UID,
 				Email:    user.Email,
 				Upload:   up,
-				Download: down})
+				Download: down,
+			})
 
 			if upCounter != nil {
 				upCounterList = append(upCounterList, upCounter)

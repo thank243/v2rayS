@@ -4,9 +4,11 @@ package limiter
 //go:generate go run github.com/v2fly/v2ray-core/v5/common/errors/errorgen
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
+	"github.com/go-redis/redis/v8"
 	"golang.org/x/time/rate"
 
 	"github.com/thank243/v2rayS/api"
@@ -27,7 +29,8 @@ type InboundInfo struct {
 }
 
 type Limiter struct {
-	InboundInfo *sync.Map // Key: Tag, Value: *InboundInfo
+	InboundInfo *sync.Map     // Key: Tag, Value: *InboundInfo
+	r           *redis.Client // todo
 }
 
 func New() *Limiter {
@@ -57,7 +60,6 @@ func (l *Limiter) AddInboundLimiter(tag string, nodeSpeedLimit uint64, userList 
 }
 
 func (l *Limiter) UpdateInboundLimiter(tag string, updatedUserList *[]api.UserInfo) error {
-
 	if value, ok := l.InboundInfo.Load(tag); ok {
 		inboundInfo := value.(*InboundInfo)
 		// Update User info
@@ -68,8 +70,7 @@ func (l *Limiter) UpdateInboundLimiter(tag string, updatedUserList *[]api.UserIn
 				DeviceLimit: u.DeviceLimit,
 			})
 			// Update old limiter bucket
-			limit := determineRate(inboundInfo.NodeSpeedLimit, u.SpeedLimit)
-			if limit > 0 {
+			if limit := determineRate(inboundInfo.NodeSpeedLimit, u.SpeedLimit); limit > 0 {
 				if bucket, ok := inboundInfo.BucketHub.Load(fmt.Sprintf("%s|%s|%d", tag, u.Email, u.UID)); ok {
 					limiter := bucket.(*rate.Limiter)
 					limiter.SetLimit(rate.Limit(limit))
@@ -92,6 +93,7 @@ func (l *Limiter) DeleteInboundLimiter(tag string) error {
 
 func (l *Limiter) GetOnlineDevice(tag string) (*[]api.OnlineUser, error) {
 	onlineUser := make([]api.OnlineUser, 0)
+
 	if value, ok := l.InboundInfo.Load(tag); ok {
 		inboundInfo := value.(*InboundInfo)
 		// Clear Speed Limiter bucket for users who are not online
@@ -122,18 +124,26 @@ func (l *Limiter) GetOnlineDevice(tag string) (*[]api.OnlineUser, error) {
 
 func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *rate.Limiter, SpeedLimit bool, Reject bool) {
 	if value, ok := l.InboundInfo.Load(tag); ok {
+		var (
+			userLimit                           uint64 = 0
+			deviceLimit, uid, globalDeviceLimit int
+		)
+
 		inboundInfo := value.(*InboundInfo)
 		nodeLimit := inboundInfo.NodeSpeedLimit
-		var userLimit uint64 = 0
-		var deviceLimit int = 0
-		var uid int = 0
 		if v, ok := inboundInfo.UserInfo.Load(email); ok {
 			u := v.(UserInfo)
 			uid = u.UID
 			userLimit = u.SpeedLimit
 			deviceLimit = u.DeviceLimit
 		}
-		// Report online device
+
+		// Online device limit
+		// todo global device limit
+		if globalDeviceLimit > 0 {
+			fmt.Println(l.r.Ping(context.Background()).String())
+		}
+
 		ipMap := new(sync.Map)
 		ipMap.Store(ip, uid)
 		// If any device is online
@@ -152,8 +162,9 @@ func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *r
 				}
 			}
 		}
-		limit := determineRate(nodeLimit, userLimit) // If you need the Speed limit
-		if limit > 0 {
+
+		// Speed limit
+		if limit := determineRate(nodeLimit, userLimit); limit > 0 {
 			limiter := rate.NewLimiter(rate.Limit(limit), int(limit)) // Byte/s
 			if v, ok := inboundInfo.BucketHub.LoadOrStore(email, limiter); ok {
 				bucket := v.(*rate.Limiter)

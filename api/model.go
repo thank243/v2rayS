@@ -14,6 +14,7 @@ type Config struct {
 	Timeout             int     `mapstructure:"Timeout"`
 	SpeedLimit          float64 `mapstructure:"SpeedLimit"`
 	DeviceLimit         int     `mapstructure:"DeviceLimit"`
+	GlobalDeviceLimit   int     `mapstructure:"GlobalDeviceLimit"`
 	RuleListPath        string  `mapstructure:"RuleListPath"`
 	DisableCustomConfig bool    `mapstructure:"DisableCustomConfig"`
 }
@@ -38,26 +39,26 @@ type NodeInfo struct {
 	Path              string
 	EnableTLS         bool
 	TLSType           string
-	EnableVless       bool
 	CypherMethod      string
 	ServiceName       string
 	Header            json.RawMessage
 }
 
 type UserInfo struct {
-	UID           int
-	Email         string
-	Passwd        string
-	Port          uint32
-	Method        string
-	SpeedLimit    uint64 // Bps
-	DeviceLimit   int
-	Protocol      string
-	ProtocolParam string
-	Obfs          string
-	ObfsParam     string
-	UUID          string
-	AlterID       uint16
+	UID               int
+	Email             string
+	Passwd            string
+	Port              uint32
+	Method            string
+	SpeedLimit        uint64 // Bps
+	DeviceLimit       int
+	GlobalDeviceLimit int
+	Protocol          string
+	ProtocolParam     string
+	Obfs              string
+	ObfsParam         string
+	UUID              string
+	AlterID           uint16
 }
 
 type OnlineUser struct {

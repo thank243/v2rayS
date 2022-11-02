@@ -18,7 +18,7 @@ func CreateClient() api.API {
 	return client
 }
 
-func TestGetV2rayNodeinfo(t *testing.T) {
+func TestGetV2rayNodeInfo(t *testing.T) {
 	client := CreateClient()
 	client.Debug()
 	nodeInfo, err := client.GetNodeInfo()
@@ -28,7 +28,7 @@ func TestGetV2rayNodeinfo(t *testing.T) {
 	t.Log(nodeInfo)
 }
 
-func TestGetSSNodeinfo(t *testing.T) {
+func TestGetSSNodeInfo(t *testing.T) {
 	apiConfig := &api.Config{
 		APIHost:  "https://127.0.0.1/",
 		Key:      "123456789",
@@ -43,7 +43,7 @@ func TestGetSSNodeinfo(t *testing.T) {
 	t.Log(nodeInfo)
 }
 
-func TestGetTrojanNodeinfo(t *testing.T) {
+func TestGetTrojanNodeInfo(t *testing.T) {
 	apiConfig := &api.Config{
 		APIHost:  "https://127.0.0.1/",
 		Key:      "123456789",

@@ -24,7 +24,7 @@ var (
 )
 
 var (
-	version  = "0.3.0"
+	version  = "0.3.1"
 	codename = "v2rayS"
 	intro    = "A v2ray backend that supports many panels"
 )
@@ -53,7 +53,6 @@ func getConfig() *viper.Viper {
 		config.SetConfigName("config")
 		config.SetConfigType("yml")
 		config.AddConfigPath(".")
-
 	}
 
 	if err := config.ReadInConfig(); err != nil {

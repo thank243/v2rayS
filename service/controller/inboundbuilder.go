@@ -101,7 +101,7 @@ func InboundBuilder(config *Config, nodeInfo *api.NodeInfo, tag string) (*core.I
 
 	setting, err := json.Marshal(proxySetting)
 	if err != nil {
-		return nil, fmt.Errorf("Marshal proxy %s config fialed: %s", nodeInfo.NodeType, err)
+		return nil, fmt.Errorf("marshal proxy %s config fialed: %s", nodeInfo.NodeType, err)
 	}
 
 	// Build streamSettings
@@ -191,7 +191,7 @@ func getCertFile(certConfig *CertConfig) (certFile string, keyFile string, err e
 		return certPath, keyPath, err
 	}
 
-	return "", "", fmt.Errorf("Unsupported certmode: %s", certConfig.CertMode)
+	return "", "", fmt.Errorf("unsupported certmode: %s", certConfig.CertMode)
 }
 
 func buildTrojanFallbacks(fallbackConfigs []*FallBackConfig) ([]*conf.TrojanInboundFallback, error) {
@@ -203,13 +203,13 @@ func buildTrojanFallbacks(fallbackConfigs []*FallBackConfig) ([]*conf.TrojanInbo
 	for i, c := range fallbackConfigs {
 
 		if c.Dest == "" {
-			return nil, fmt.Errorf("Dest is required for fallback fialed")
+			return nil, fmt.Errorf("dest is required for fallback fialed")
 		}
 
 		var dest json.RawMessage
 		dest, err := json.Marshal(c.Dest)
 		if err != nil {
-			return nil, fmt.Errorf("Marshal dest %s config fialed: %s", dest, err)
+			return nil, fmt.Errorf("marshal dest %s config fialed: %s", dest, err)
 		}
 		trojanFallBacks[i] = &conf.TrojanInboundFallback{
 			Type: c.Type,
