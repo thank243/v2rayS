@@ -14,6 +14,9 @@ on:
   pull_request:
     branches:
       - 'master'
+  create:
+    tags:
+      - v*
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
