@@ -24,7 +24,7 @@ var (
 )
 
 var (
-	version  = "0.3.1"
+	version  = "0.4.0"
 	codename = "v2rayS"
 	intro    = "A v2ray backend that supports many panels"
 )

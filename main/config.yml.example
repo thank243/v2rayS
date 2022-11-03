@@ -35,6 +35,12 @@ Nodes:
         WarnTimes: 0 # After (WarnTimes) consecutive warnings, the user will be limited. Set to 0 to punish overSpeed user immediately.
         LimitSpeed: 0 # The speedlimit of a limited user (unit: mbps)
         LimitDuration: 0 # How many minutes will the limiting last (unit: minute)
+      GlobalDeviceLimitConfig:
+        Limit: 0 # The global device limit of a user, 0 means disable
+        RedisAddr: 127.0.0.1:6379 # The redis server address
+        RedisPassword: YOUR PASSWORD # Redis password
+        RedisDB: 0 # Redis DB
+        Expiry: 60 # Expiry time (minute)
       FallBackConfigs: # Support multiple fallbacks
         - Alpn: # Alpn, Empty for any
           Path: # HTTP PATH, Empty for any

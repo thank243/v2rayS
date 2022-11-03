@@ -6,7 +6,9 @@ package limiter
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"golang.org/x/time/rate"
@@ -29,8 +31,12 @@ type InboundInfo struct {
 }
 
 type Limiter struct {
-	InboundInfo *sync.Map     // Key: Tag, Value: *InboundInfo
-	r           *redis.Client // todo
+	InboundInfo *sync.Map // Key: Tag, Value: *InboundInfo
+	r           *redis.Client
+	g           struct {
+		limit  int
+		expiry int
+	}
 }
 
 func New() *Limiter {
@@ -39,7 +45,18 @@ func New() *Limiter {
 	}
 }
 
-func (l *Limiter) AddInboundLimiter(tag string, nodeSpeedLimit uint64, userList *[]api.UserInfo) error {
+func (l *Limiter) AddInboundLimiter(tag string, nodeSpeedLimit uint64, userList *[]api.UserInfo, globalDeviceLimit *GlobalDeviceLimitConfig) error {
+	// global limit
+	if globalDeviceLimit.Limit > 0 {
+		l.r = redis.NewClient(&redis.Options{
+			Addr:     globalDeviceLimit.RedisAddr,
+			Password: globalDeviceLimit.RedisPassword,
+			DB:       globalDeviceLimit.RedisDB,
+		})
+		l.g.limit = globalDeviceLimit.Limit
+		l.g.expiry = globalDeviceLimit.Expiry
+	}
+
 	inboundInfo := &InboundInfo{
 		Tag:            tag,
 		NodeSpeedLimit: nodeSpeedLimit,
@@ -129,6 +146,7 @@ func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *r
 			deviceLimit, uid, globalDeviceLimit int
 		)
 
+		globalDeviceLimit = l.g.limit
 		inboundInfo := value.(*InboundInfo)
 		nodeLimit := inboundInfo.NodeSpeedLimit
 		if v, ok := inboundInfo.UserInfo.Load(email); ok {
@@ -138,12 +156,26 @@ func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *r
 			deviceLimit = u.DeviceLimit
 		}
 
-		// Online device limit
-		// todo global device limit
+		// Global device limit
 		if globalDeviceLimit > 0 {
-			fmt.Println(l.r.Ping(context.Background()).String())
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+			defer cancel()
+
+			trimEmail := strings.Split(email, "|")[1]
+			if l.r.Exists(ctx, trimEmail).Val() == 0 {
+				l.r.HSet(ctx, trimEmail, ip, uid)
+				l.r.Expire(ctx, trimEmail, time.Duration(l.g.expiry)*time.Minute)
+			} else {
+				l.r.HSet(ctx, trimEmail, ip, uid)
+			}
+
+			if l.r.HLen(ctx, trimEmail).Val() > int64(l.g.limit) {
+				l.r.HDel(ctx, trimEmail, ip)
+				return nil, false, true
+			}
 		}
 
+		// Local device limit
 		ipMap := new(sync.Map)
 		ipMap.Store(ip, uid)
 		// If any device is online

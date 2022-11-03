@@ -17,6 +17,7 @@ import (
 	"github.com/thank243/v2rayS/api"
 	"github.com/thank243/v2rayS/app/mydispatcher"
 	"github.com/thank243/v2rayS/common/legocmd"
+	"github.com/thank243/v2rayS/common/limiter"
 	"github.com/thank243/v2rayS/common/serverstatus"
 )
 
@@ -91,8 +92,12 @@ func (c *Controller) Start() error {
 	// sync controller userList
 	c.userList = userInfo
 
+	// Init global device limit
+	if c.config.GlobalDeviceLimitConfig == nil {
+		c.config.GlobalDeviceLimitConfig = &limiter.GlobalDeviceLimitConfig{Limit: 0}
+	}
 	// Add Limiter
-	if err := c.AddInboundLimiter(c.Tag, newNodeInfo.SpeedLimit, userInfo); err != nil {
+	if err := c.AddInboundLimiter(c.Tag, newNodeInfo.SpeedLimit, userInfo, c.config.GlobalDeviceLimitConfig); err != nil {
 		log.Print(err)
 	}
 	// Add Rule Manager
@@ -238,7 +243,7 @@ func (c *Controller) nodeInfoMonitor() (err error) {
 			return nil
 		}
 		// Add Limiter
-		if err := c.AddInboundLimiter(c.Tag, newNodeInfo.SpeedLimit, newUserInfo); err != nil {
+		if err := c.AddInboundLimiter(c.Tag, newNodeInfo.SpeedLimit, newUserInfo, c.config.GlobalDeviceLimitConfig); err != nil {
 			log.Print(err)
 			return nil
 		}
