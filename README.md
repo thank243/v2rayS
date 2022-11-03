@@ -41,7 +41,7 @@ A v2ray backend framework that can easily support many panels.
 |  节点端口限速   | :white_check_mark: | :white_check_mark: |
 |  按照用户限速   | :white_check_mark: | :white_check_mark: |
 |  自定义DNS   | :white_check_mark: | :white_check_mark: |
-|  全局用户限制   |     :pushpin:      |     :pushpin:      |
+|  全局用户设备限制   | :white_check_mark: | :white_check_mark: |
 
 ## 支持前端
 
