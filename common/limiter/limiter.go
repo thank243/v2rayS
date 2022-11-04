@@ -142,11 +142,10 @@ func (l *Limiter) GetOnlineDevice(tag string) (*[]api.OnlineUser, error) {
 func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *rate.Limiter, SpeedLimit bool, Reject bool) {
 	if value, ok := l.InboundInfo.Load(tag); ok {
 		var (
-			userLimit                           uint64 = 0
-			deviceLimit, uid, globalDeviceLimit int
+			userLimit        uint64 = 0
+			deviceLimit, uid int
 		)
 
-		globalDeviceLimit = l.g.limit
 		inboundInfo := value.(*InboundInfo)
 		nodeLimit := inboundInfo.NodeSpeedLimit
 		if v, ok := inboundInfo.UserInfo.Load(email); ok {
@@ -157,7 +156,7 @@ func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *r
 		}
 
 		// Global device limit
-		if globalDeviceLimit > 0 {
+		if l.g.limit > 0 {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 			defer cancel()
 
