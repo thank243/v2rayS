@@ -162,16 +162,20 @@ func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *r
 			defer cancel()
 
 			trimEmail := strings.Split(email, "|")[1]
-			if l.r.Exists(ctx, trimEmail).Val() == 0 {
-				l.r.HSet(ctx, trimEmail, ip, uid)
-				l.r.Expire(ctx, trimEmail, time.Duration(l.g.expiry)*time.Minute)
+			exist, err := l.r.Exists(ctx, trimEmail).Result()
+			if err != nil {
+				newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
 			} else {
-				l.r.HSet(ctx, trimEmail, ip, uid)
-			}
-
-			if l.r.HLen(ctx, trimEmail).Val() > int64(l.g.limit) {
-				l.r.HDel(ctx, trimEmail, ip)
-				return nil, false, true
+				if exist == 0 {
+					l.r.HSet(ctx, trimEmail, ip, uid)
+					l.r.Expire(ctx, trimEmail, time.Duration(l.g.expiry)*time.Minute)
+				} else {
+					l.r.HSet(ctx, trimEmail, ip, uid)
+				}
+				if l.r.HLen(ctx, trimEmail).Val() > int64(l.g.limit) {
+					l.r.HDel(ctx, trimEmail, ip)
+					return nil, false, true
+				}
 			}
 		}
 

@@ -142,11 +142,9 @@ func (c *Controller) Start() error {
 		c.userReportPeriodic.Start()
 	})
 
-	// delay to start certMonitor
+	// start certMonitor
 	log.Printf("[%s: %d] Start monitor cert status", c.nodeInfo.NodeType, c.nodeInfo.NodeID)
-	go time.AfterFunc(time.Duration(c.config.UpdatePeriodic)*time.Second, func() {
-		c.renewCertPeriodic.Start()
-	})
+	go c.renewCertPeriodic.Start()
 
 	return nil
 }
