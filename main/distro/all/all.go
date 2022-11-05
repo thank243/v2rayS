@@ -4,9 +4,10 @@ import (
 	// The following are necessary as they register handlers in their init functions.
 
 	// Mandatory features. Can't remove unless there are replacements.
-	// _ "github.com/v2fly/v2ray-core/v5/app/dispatcher"
 	_ "github.com/v2fly/v2ray-core/v5/app/proxyman/inbound"
 	_ "github.com/v2fly/v2ray-core/v5/app/proxyman/outbound"
+	// My dispatcher
+	_ "github.com/thank243/v2rayS/app/mydispatcher"
 
 	// Default commander and all its services. This is an optional feature.
 	_ "github.com/v2fly/v2ray-core/v5/app/commander"
