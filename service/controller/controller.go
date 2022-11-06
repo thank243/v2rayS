@@ -45,6 +45,7 @@ type Controller struct {
 	ohm                     outbound.Manager
 	stm                     stats.Manager
 	dispatcher              *mydispatcher.DefaultDispatcher
+	startAt                 time.Time
 }
 
 // New return a Controller service with default parameters.
@@ -58,6 +59,7 @@ func New(server *core.Instance, api api.API, config *Config, panelType string) *
 		ohm:        server.GetFeature(outbound.ManagerType()).(outbound.Manager),
 		stm:        server.GetFeature(stats.ManagerType()).(stats.Manager),
 		dispatcher: server.GetFeature(routing.DispatcherType()).(*mydispatcher.DefaultDispatcher),
+		startAt:    time.Now(),
 	}
 
 	return controller
@@ -130,20 +132,16 @@ func (c *Controller) Start() error {
 		c.warnedUsers = make(map[api.UserInfo]int)
 	}
 
-	// delay to start nodeInfoMonitor
-	log.Printf("[%s: %d] Start monitor node status", c.nodeInfo.NodeType, c.nodeInfo.NodeID)
-	go time.AfterFunc(time.Duration(c.config.UpdatePeriodic)*time.Second, func() {
-		c.nodeInfoMonitorPeriodic.Start()
-	})
+	// Start nodeInfoMonitor
+	log.Printf("%s Start monitor node status", c.logPrefix())
+	go c.nodeInfoMonitorPeriodic.Start()
 
-	// delay to start userReport
-	log.Printf("[%s: %d] Start report user status", c.nodeInfo.NodeType, c.nodeInfo.NodeID)
-	go time.AfterFunc(time.Duration(c.config.UpdatePeriodic)*time.Second, func() {
-		c.userReportPeriodic.Start()
-	})
+	// Start userReport
+	log.Printf("%s Start report user status", c.logPrefix())
+	go c.userReportPeriodic.Start()
 
 	// start certMonitor
-	log.Printf("[%s: %d] Start monitor cert status", c.nodeInfo.NodeType, c.nodeInfo.NodeID)
+	log.Printf("%s Start monitor cert status", c.logPrefix())
 	go c.renewCertPeriodic.Start()
 
 	return nil
@@ -154,21 +152,21 @@ func (c *Controller) Close() error {
 	if c.nodeInfoMonitorPeriodic != nil {
 		err := c.nodeInfoMonitorPeriodic.Close()
 		if err != nil {
-			log.Panicf("node info periodic close failed: %s", err)
+			log.Panicf("%s node info periodic close failed: %s", c.logPrefix(), err)
 		}
 	}
 
-	if c.nodeInfoMonitorPeriodic != nil {
+	if c.userReportPeriodic != nil {
 		err := c.userReportPeriodic.Close()
 		if err != nil {
-			log.Panicf("user report periodic close failed: %s", err)
+			log.Panicf("%s user report periodic close failed: %s", c.logPrefix(), err)
 		}
 	}
 
 	if c.renewCertPeriodic != nil {
 		err := c.renewCertPeriodic.Close()
 		if err != nil {
-			log.Panicf("renew cert periodic close failed: %s", err)
+			log.Panicf("%s renew cert periodic close failed: %s", c.logPrefix(), err)
 		}
 	}
 
@@ -176,6 +174,11 @@ func (c *Controller) Close() error {
 }
 
 func (c *Controller) nodeInfoMonitor() (err error) {
+	// Delay to handle
+	if time.Since(c.startAt) < time.Duration(c.config.UpdatePeriodic)*time.Second {
+		return nil
+	}
+
 	// First fetch Node Info
 	newNodeInfo, err := c.apiClient.GetNodeInfo()
 	if err != nil {
@@ -267,7 +270,7 @@ func (c *Controller) nodeInfoMonitor() (err error) {
 				log.Print(err)
 			}
 		}
-		log.Printf("[%s: %d] %d user deleted, %d user added", c.nodeInfo.NodeType, c.nodeInfo.NodeID, len(deleted), len(added))
+		log.Printf("%s %d user deleted, %d user added", c.logPrefix(), len(deleted), len(added))
 	}
 	c.userList = newUserInfo
 	return nil
@@ -349,17 +352,14 @@ func (c *Controller) addInboundForSSPlugin(newNodeInfo api.NodeInfo) (err error)
 	}
 	err = c.addInbound(inboundConfig)
 	if err != nil {
-
 		return err
 	}
 	outBoundConfig, err = OutboundBuilder(c.config, &fakeNodeInfo, dokodemoTag)
 	if err != nil {
-
 		return err
 	}
 	err = c.addOutbound(outBoundConfig)
 	if err != nil {
-
 		return err
 	}
 	return nil
@@ -390,7 +390,7 @@ func (c *Controller) addNewUser(userInfo *[]api.UserInfo, nodeInfo *api.NodeInfo
 	if err != nil {
 		return err
 	}
-	log.Printf("[%s: %d] Added %d new users", c.nodeInfo.NodeType, c.nodeInfo.NodeID, len(*userInfo))
+	log.Printf("%s Added %d new users", c.logPrefix(), len(*userInfo))
 	return nil
 }
 
@@ -444,6 +444,11 @@ func limitUser(c *Controller, user api.UserInfo, silentUsers *[]api.UserInfo) {
 }
 
 func (c *Controller) userInfoMonitor() (err error) {
+	// Delay to handle
+	if time.Since(c.startAt) < time.Duration(c.config.UpdatePeriodic)*time.Second {
+		return nil
+	}
+
 	// Get server status
 	CPU, Mem, Disk, Uptime, err := serverstatus.GetSystemInfo()
 	if err != nil {
@@ -461,7 +466,7 @@ func (c *Controller) userInfoMonitor() (err error) {
 	}
 	// Unlock users
 	if c.config.AutoSpeedLimitConfig.Limit > 0 && len(c.limitedUsers) > 0 {
-		log.Printf("Limited users:")
+		log.Printf("%s Limited users:", c.logPrefix())
 		toReleaseUsers := make([]api.UserInfo, 0)
 		for user, limitInfo := range c.limitedUsers {
 			if time.Now().Unix() > limitInfo.end {
@@ -551,7 +556,7 @@ func (c *Controller) userInfoMonitor() (err error) {
 		if err = c.apiClient.ReportNodeOnlineUsers(onlineDevice); err != nil {
 			log.Print(err)
 		} else {
-			log.Printf("[%s: %d] Report %d online users", c.nodeInfo.NodeType, c.nodeInfo.NodeID, len(*onlineDevice))
+			log.Printf("%s Report %d online users", c.logPrefix(), len(*onlineDevice))
 		}
 	}
 	// Report Illegal user
@@ -561,7 +566,7 @@ func (c *Controller) userInfoMonitor() (err error) {
 		if err = c.apiClient.ReportIllegal(detectResult); err != nil {
 			log.Print(err)
 		} else {
-			log.Printf("[%s: %d] Report %d illegal behaviors", c.nodeInfo.NodeType, c.nodeInfo.NodeID, len(*detectResult))
+			log.Printf("%s Report %d illegal behaviors", c.logPrefix(), len(*detectResult))
 		}
 
 	}
@@ -587,4 +592,8 @@ func (c *Controller) certMonitor() (err error) {
 
 func (c *Controller) buildNodeTag() string {
 	return fmt.Sprintf("%s_%s_%d", c.nodeInfo.NodeType, c.config.ListenIP, c.nodeInfo.Port)
+}
+
+func (c *Controller) logPrefix() string {
+	return fmt.Sprintf("[%s] %s(ID=%d)", c.clientInfo.APIHost, c.nodeInfo.NodeType, c.nodeInfo.NodeID)
 }
