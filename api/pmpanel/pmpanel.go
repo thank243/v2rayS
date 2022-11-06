@@ -132,7 +132,7 @@ func (c *APIClient) parseResponse(res *resty.Response, path string, err error) (
 	return response, nil
 }
 
-// GetNodeInfo will pull NodeInfo Config from sspanel
+// GetNodeInfo will pull NodeInfo Config from panel
 func (c *APIClient) GetNodeInfo() (nodeInfo *api.NodeInfo, err error) {
 	path := fmt.Sprintf("/api/node")
 	var nodeType = ""
@@ -303,7 +303,7 @@ func (c *APIClient) ReportUserTraffic(userTraffic *[]api.UserTraffic) error {
 	return nil
 }
 
-// GetNodeRule will pull the audit rule form pmpanel
+// GetNodeRule will pull the audit rule form panel
 func (c *APIClient) GetNodeRule() (*[]api.DetectRule, error) {
 	ruleList := c.LocalRuleList
 	path := "/api/rules"
@@ -352,10 +352,10 @@ func (c *APIClient) ReportIllegal(*[]api.DetectResult) error {
 	return nil
 }
 
-// ParseV2rayNodeResponse parse the response for the given nodeinfor format
+// ParseV2rayNodeResponse parse the response for the given nodeInfo format
 func (c *APIClient) ParseV2rayNodeResponse(nodeInfoResponse *NodeInfoResponse) (*api.NodeInfo, error) {
 	var enableTLS bool
-	var path, host, TLStype, transportProtocol, serviceName string
+	var path, host, TLSType, transportProtocol, serviceName string
 	var speedlimit uint64 = 0
 
 	port := nodeInfoResponse.Port
@@ -389,7 +389,7 @@ func (c *APIClient) ParseV2rayNodeResponse(nodeInfoResponse *NodeInfoResponse) (
 		AlterID:           alterID,
 		TransportProtocol: transportProtocol,
 		EnableTLS:         enableTLS,
-		TLSType:           TLStype,
+		TLSType:           TLSType,
 		Path:              path,
 		Host:              host,
 		ServiceName:       serviceName,
@@ -398,7 +398,7 @@ func (c *APIClient) ParseV2rayNodeResponse(nodeInfoResponse *NodeInfoResponse) (
 	return nodeInfo, nil
 }
 
-// ParseSSNodeResponse parse the response for the given nodeinfor format
+// ParseSSNodeResponse parse the response for the given nodeInfo format
 func (c *APIClient) ParseSSNodeResponse(nodeInfoResponse *NodeInfoResponse) (*api.NodeInfo, error) {
 	var speedlimit uint64 = 0
 
@@ -420,7 +420,7 @@ func (c *APIClient) ParseSSNodeResponse(nodeInfoResponse *NodeInfoResponse) (*ap
 	return nodeInfo, nil
 }
 
-// ParseTrojanNodeResponse parse the response for the given nodeinfor format
+// ParseTrojanNodeResponse parse the response for the given nodeInfo format
 func (c *APIClient) ParseTrojanNodeResponse(nodeInfoResponse *NodeInfoResponse) (*api.NodeInfo, error) {
 	// 域名或IP;port=连接端口#偏移端口|host=xx
 	// gz.aaa.com;port=443#12345|host=hk.aaa.com

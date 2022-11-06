@@ -158,7 +158,7 @@ func (p *Panel) loadCore(panelConfig *Config) *core.Instance {
 func (p *Panel) Start() {
 	p.access.Lock()
 	defer p.access.Unlock()
-	newError("Starting the panel").AtWarning().WriteToLog()
+	newError("Starting panels").AtWarning().WriteToLog()
 	// Load Core
 	server := p.loadCore(p.panelConfig)
 	if err := server.Start(); err != nil {
