@@ -3,6 +3,7 @@ package cmd
 import (
 	"crypto"
 	"crypto/x509"
+	"fmt"
 	"time"
 
 	"github.com/go-acme/lego/v4/certcrypto"
@@ -80,12 +81,6 @@ func renew(ctx *cli.Context) error {
 	bundle := !ctx.Bool("no-bundle")
 
 	meta := map[string]string{renewEnvAccountEmail: account.Email}
-
-	// CSR
-	if ctx.GlobalIsSet("csr") {
-		return renewForCSR(ctx, client, certsStorage, bundle, meta)
-	}
-
 	// Domains
 	return renewForDomains(ctx, client, certsStorage, bundle, meta)
 }
@@ -105,7 +100,7 @@ func renewForDomains(ctx *cli.Context, client *lego.Client, certsStorage *Certif
 	cert := certificates[0]
 
 	if !needRenewal(cert, domain, ctx.Int("days")) {
-		return nil
+		return fmt.Errorf("no renewal")
 	}
 
 	// This is just meant to be informal for the user.
@@ -135,50 +130,6 @@ func renewForDomains(ctx *cli.Context, client *lego.Client, certsStorage *Certif
 		PreferredChain: ctx.String("preferred-chain"),
 	}
 	certRes, err := client.Certificate.Obtain(request)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	certsStorage.SaveResource(certRes)
-
-	meta[renewEnvCertDomain] = domain
-	meta[renewEnvCertPath] = certsStorage.GetFileName(domain, ".crt")
-	meta[renewEnvCertKeyPath] = certsStorage.GetFileName(domain, ".key")
-
-	return launchHook(ctx.String("renew-hook"), meta)
-}
-
-func renewForCSR(ctx *cli.Context, client *lego.Client, certsStorage *CertificatesStorage, bundle bool, meta map[string]string) error {
-	csr, err := readCSRFile(ctx.GlobalString("csr"))
-	if err != nil {
-		log.Panic(err)
-	}
-
-	domain := csr.Subject.CommonName
-
-	// load the cert resource from files.
-	// We store the certificate, private key and metadata in different files
-	// as web servers would not be able to work with a combined file.
-	certificates, err := certsStorage.ReadCertificate(domain, ".crt")
-	if err != nil {
-		log.Panicf("Error while loading the certificate for domain %s\n\t%v", domain, err)
-	}
-
-	cert := certificates[0]
-
-	if !needRenewal(cert, domain, ctx.Int("days")) {
-		return nil
-	}
-
-	// This is just meant to be informal for the user.
-	timeLeft := cert.NotAfter.Sub(time.Now().UTC())
-	log.Infof("[%s] acme: Trying renewal with %d hours remaining", domain, int(timeLeft.Hours()))
-
-	certRes, err := client.Certificate.ObtainForCSR(certificate.ObtainForCSRRequest{
-		CSR:            csr,
-		Bundle:         bundle,
-		PreferredChain: ctx.String("preferred-chain"),
-	})
 	if err != nil {
 		log.Panic(err)
 	}

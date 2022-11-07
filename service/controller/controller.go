@@ -583,9 +583,15 @@ func (c *Controller) certMonitor() (err error) {
 		}
 		_, _, err = lego.RenewCert(c.config.CertConfig.CertDomain, c.config.CertConfig.Email, c.config.CertConfig.CertMode, c.config.CertConfig.Provider, c.config.CertConfig.DNSEnv)
 		if err != nil {
+			if err.Error() == "no renewal" {
+				return err
+			}
 			log.Print(err)
 			return err
 		}
+		log.Print("Restart core to load new certs")
+		c.server.Close()
+		c.server.Start()
 	}
 	return nil
 }

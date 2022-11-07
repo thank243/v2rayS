@@ -6,9 +6,6 @@ import "github.com/urfave/cli"
 func CreateCommands() []cli.Command {
 	return []cli.Command{
 		createRun(),
-		createRevoke(),
 		createRenew(),
-		createDNSHelp(),
-		createList(),
 	}
 }

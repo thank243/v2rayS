@@ -47,13 +47,8 @@ func New() (*LegoCMD, error) {
 	}
 
 	defaultPath = filepath.Join(p, "cert")
-
 	app.Flags = cmd.CreateFlags(defaultPath)
-
-	app.Before = cmd.Before
-
 	app.Commands = cmd.CreateCommands()
-
 	lego := &LegoCMD{
 		cmdClient: app,
 	}
@@ -156,13 +151,13 @@ func (l *LegoCMD) RenewCert(domain, email, certMode, provider string, DNSEnv map
 	var argStr string
 	switch certMode {
 	case "http":
-		argStr = fmt.Sprintf("lego -a -d %s -m %s --http renew --days 30", domain, email)
+		argStr = fmt.Sprintf("lego -a -d %s -m %s --http renew", domain, email)
 	case "dns":
 		// Set Env for DNS configuration
 		for key, value := range DNSEnv {
 			os.Setenv(key, value)
 		}
-		argStr = fmt.Sprintf("lego -a -d %s -m %s --dns %s renew --days 30", domain, email, provider)
+		argStr = fmt.Sprintf("lego -a -d %s -m %s --dns %s renew", domain, email, provider)
 	default:
 		return "", "", fmt.Errorf("unsupport cert mode: %s", certMode)
 	}
