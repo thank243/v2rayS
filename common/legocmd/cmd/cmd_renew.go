@@ -80,12 +80,11 @@ func renew(ctx *cli.Context) error {
 
 	bundle := !ctx.Bool("no-bundle")
 
-	meta := map[string]string{renewEnvAccountEmail: account.Email}
 	// Domains
-	return renewForDomains(ctx, client, certsStorage, bundle, meta)
+	return renewForDomains(ctx, client, certsStorage, bundle)
 }
 
-func renewForDomains(ctx *cli.Context, client *lego.Client, certsStorage *CertificatesStorage, bundle bool, meta map[string]string) error {
+func renewForDomains(ctx *cli.Context, client *lego.Client, certsStorage *CertificatesStorage, bundle bool) error {
 	domains := ctx.GlobalStringSlice("domains")
 	domain := domains[0]
 
@@ -136,11 +135,7 @@ func renewForDomains(ctx *cli.Context, client *lego.Client, certsStorage *Certif
 
 	certsStorage.SaveResource(certRes)
 
-	meta[renewEnvCertDomain] = domain
-	meta[renewEnvCertPath] = certsStorage.GetFileName(domain, ".crt")
-	meta[renewEnvCertKeyPath] = certsStorage.GetFileName(domain, ".key")
-
-	return launchHook(ctx.String("renew-hook"), meta)
+	return nil
 }
 
 func needRenewal(x509Cert *x509.Certificate, domain string, days int) bool {

@@ -16,7 +16,6 @@ import (
 
 	"github.com/thank243/v2rayS/api"
 	"github.com/thank243/v2rayS/app/mydispatcher"
-	"github.com/thank243/v2rayS/common/legocmd"
 	"github.com/thank243/v2rayS/common/limiter"
 	"github.com/thank243/v2rayS/common/serverstatus"
 )
@@ -37,12 +36,11 @@ type Controller struct {
 	userList                *[]api.UserInfo
 	nodeInfoMonitorPeriodic *task.Periodic
 	userReportPeriodic      *task.Periodic
-	renewCertPeriodic       *task.Periodic
 	limitedUsers            map[api.UserInfo]LimitInfo
 	warnedUsers             map[api.UserInfo]int
 	panelType               string
-	ihm                     inbound.Manager
-	ohm                     outbound.Manager
+	ibm                     inbound.Manager
+	obm                     outbound.Manager
 	stm                     stats.Manager
 	dispatcher              *mydispatcher.DefaultDispatcher
 	startAt                 time.Time
@@ -55,8 +53,8 @@ func New(server *core.Instance, api api.API, config *Config, panelType string) *
 		config:     config,
 		apiClient:  api,
 		panelType:  panelType,
-		ihm:        server.GetFeature(inbound.ManagerType()).(inbound.Manager),
-		ohm:        server.GetFeature(outbound.ManagerType()).(outbound.Manager),
+		ibm:        server.GetFeature(inbound.ManagerType()).(inbound.Manager),
+		obm:        server.GetFeature(outbound.ManagerType()).(outbound.Manager),
 		stm:        server.GetFeature(stats.ManagerType()).(stats.Manager),
 		dispatcher: server.GetFeature(routing.DispatcherType()).(*mydispatcher.DefaultDispatcher),
 		startAt:    time.Now(),
@@ -120,10 +118,7 @@ func (c *Controller) Start() error {
 		Interval: time.Duration(c.config.UpdatePeriodic) * time.Second,
 		Execute:  c.userInfoMonitor,
 	}
-	c.renewCertPeriodic = &task.Periodic{
-		Interval: time.Duration(c.config.UpdatePeriodic) * time.Second * 60,
-		Execute:  c.certMonitor,
-	}
+
 	if c.config.AutoSpeedLimitConfig == nil {
 		c.config.AutoSpeedLimitConfig = &AutoSpeedLimitConfig{0, 0, 0, 0}
 	}
@@ -139,10 +134,6 @@ func (c *Controller) Start() error {
 	// Start userReport
 	log.Printf("%s Start report user status", c.logPrefix())
 	go c.userReportPeriodic.Start()
-
-	// start certMonitor
-	log.Printf("%s Start monitor cert status", c.logPrefix())
-	go c.renewCertPeriodic.Start()
 
 	return nil
 }
@@ -160,13 +151,6 @@ func (c *Controller) Close() error {
 		err := c.userReportPeriodic.Close()
 		if err != nil {
 			log.Panicf("%s user report periodic close failed: %s", c.logPrefix(), err)
-		}
-	}
-
-	if c.renewCertPeriodic != nil {
-		err := c.renewCertPeriodic.Close()
-		if err != nil {
-			log.Panicf("%s renew cert periodic close failed: %s", c.logPrefix(), err)
 		}
 	}
 
@@ -569,29 +553,6 @@ func (c *Controller) userInfoMonitor() (err error) {
 			log.Printf("%s Report %d illegal behaviors", c.logPrefix(), len(*detectResult))
 		}
 
-	}
-	return nil
-}
-
-func (c *Controller) certMonitor() (err error) {
-	// Check Cert
-	if c.nodeInfo.EnableTLS && (c.config.CertConfig.CertMode == "dns" || c.config.CertConfig.CertMode == "http") {
-		lego, err := legocmd.New()
-		if err != nil {
-			log.Print(err)
-			return err
-		}
-		_, _, err = lego.RenewCert(c.config.CertConfig.CertDomain, c.config.CertConfig.Email, c.config.CertConfig.CertMode, c.config.CertConfig.Provider, c.config.CertConfig.DNSEnv)
-		if err != nil {
-			if err.Error() == "no renewal" {
-				return err
-			}
-			log.Print(err)
-			return err
-		}
-		log.Print("Restart core to load new certs")
-		c.server.Close()
-		c.server.Start()
 	}
 	return nil
 }

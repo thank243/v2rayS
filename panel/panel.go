@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/imdario/mergo"
 	"github.com/r3labs/diff/v3"
@@ -14,6 +15,7 @@ import (
 	"github.com/v2fly/v2ray-core/v5/app/proxyman"
 	"github.com/v2fly/v2ray-core/v5/app/stats"
 	"github.com/v2fly/v2ray-core/v5/common/serial"
+	"github.com/v2fly/v2ray-core/v5/common/task"
 	"github.com/v2fly/v2ray-core/v5/infra/conf/synthetic/dns"
 	"github.com/v2fly/v2ray-core/v5/infra/conf/synthetic/log"
 	"github.com/v2fly/v2ray-core/v5/infra/conf/synthetic/router"
@@ -26,17 +28,19 @@ import (
 	"github.com/thank243/v2rayS/api/v2board"
 	"github.com/thank243/v2rayS/api/v2raysocks"
 	"github.com/thank243/v2rayS/app/mydispatcher"
+	"github.com/thank243/v2rayS/common/legocmd"
 	"github.com/thank243/v2rayS/service"
 	"github.com/thank243/v2rayS/service/controller"
 )
 
 // Panel Structure
 type Panel struct {
-	access      sync.Mutex
-	panelConfig *Config
-	Server      *core.Instance
-	Service     []service.Service
-	Running     bool
+	access            sync.Mutex
+	panelConfig       *Config
+	Server            *core.Instance
+	Service           []service.Service
+	Running           bool
+	renewCertPeriodic *task.Periodic
 }
 
 func New(panelConfig *Config) *Panel {
@@ -158,7 +162,9 @@ func (p *Panel) loadCore(panelConfig *Config) *core.Instance {
 func (p *Panel) Start() {
 	p.access.Lock()
 	defer p.access.Unlock()
-	newError("Starting panels").AtWarning().WriteToLog()
+
+	newError("Starting panels").WriteToLog()
+
 	// Load Core
 	server := p.loadCore(p.panelConfig)
 	if err := server.Start(); err != nil {
@@ -201,6 +207,15 @@ func (p *Panel) Start() {
 		}
 	}
 	p.Running = true
+
+	// CertMonitor
+	p.renewCertPeriodic = &task.Periodic{
+		Interval: time.Minute * 60,
+		Execute:  p.certMonitor,
+	}
+	newError("Start monitor cert status").WriteToLog()
+	go p.renewCertPeriodic.Start()
+
 	return
 }
 
@@ -217,6 +232,14 @@ func (p *Panel) Close() {
 	p.Service = nil
 	p.Server.Close()
 	p.Running = false
+
+	if p.renewCertPeriodic != nil {
+		err := p.renewCertPeriodic.Close()
+		if err != nil {
+			panic(fmt.Sprintf("renew cert periodic close failed: %s", err))
+		}
+	}
+
 	return
 }
 
@@ -238,4 +261,31 @@ func parseConnectionConfig(c *ConnectionConfig) (policy *conf.Policy) {
 	}
 
 	return
+}
+
+func (p *Panel) certMonitor() error {
+	nodesConfig := p.panelConfig.NodesConfig
+	for i := range nodesConfig {
+		certConfig := nodesConfig[i].ControllerConfig.CertConfig
+		// Check Cert
+		if certConfig.CertMode == "dns" || certConfig.CertMode == "http" {
+			lego, err := legocmd.New()
+			if err != nil {
+				newError(err).AtError().WriteToLog()
+				return nil
+			}
+			_, _, err = lego.RenewCert(certConfig.CertDomain, certConfig.Email, certConfig.CertMode, certConfig.Provider, certConfig.DNSEnv)
+			if err != nil {
+				if err.Error() == "no renewal" {
+					return nil
+				}
+				newError(err).AtError().WriteToLog()
+				return nil
+			}
+			p.Close()
+			p.Start()
+		}
+	}
+
+	return nil
 }

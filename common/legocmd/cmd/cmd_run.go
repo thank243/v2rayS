@@ -95,14 +95,7 @@ func run(ctx *cli.Context) error {
 
 	certsStorage.SaveResource(cert)
 
-	meta := map[string]string{
-		renewEnvAccountEmail: account.Email,
-		renewEnvCertDomain:   cert.Domain,
-		renewEnvCertPath:     certsStorage.GetFileName(cert.Domain, ".crt"),
-		renewEnvCertKeyPath:  certsStorage.GetFileName(cert.Domain, ".key"),
-	}
-
-	return launchHook(ctx.String("run-hook"), meta)
+	return nil
 }
 
 func handleTOS(ctx *cli.Context, client *lego.Client) bool {
