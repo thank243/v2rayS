@@ -14,6 +14,7 @@ import (
 
 	"github.com/thank243/v2rayS/api"
 	"github.com/thank243/v2rayS/api/v2board"
+	"github.com/thank243/v2rayS/common/mylego"
 	. "github.com/thank243/v2rayS/service/controller"
 )
 
@@ -46,7 +47,7 @@ func TestController(t *testing.T) {
 	if err = server.Start(); err != nil {
 		t.Errorf("Failed to start instance: %s", err)
 	}
-	certConfig := &CertConfig{
+	certConfig := &mylego.CertConfig{
 		CertMode:   "http",
 		CertDomain: "test.ss.tk",
 		Provider:   "alidns",
