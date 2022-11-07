@@ -28,7 +28,7 @@ import (
 	"github.com/thank243/v2rayS/api/v2board"
 	"github.com/thank243/v2rayS/api/v2raysocks"
 	"github.com/thank243/v2rayS/app/mydispatcher"
-	"github.com/thank243/v2rayS/common/legocmd"
+	"github.com/thank243/v2rayS/common/mylego"
 	"github.com/thank243/v2rayS/service"
 	"github.com/thank243/v2rayS/service/controller"
 )
@@ -269,21 +269,21 @@ func (p *Panel) certMonitor() error {
 		certConfig := nodesConfig[i].ControllerConfig.CertConfig
 		// Check Cert
 		if certConfig.CertMode == "dns" || certConfig.CertMode == "http" {
-			lego, err := legocmd.New()
+			lego, err := mylego.New(certConfig)
 			if err != nil {
 				newError(err).AtError().WriteToLog()
 				return nil
 			}
-			_, _, err = lego.RenewCert(certConfig.CertDomain, certConfig.Email, certConfig.CertMode, certConfig.Provider, certConfig.DNSEnv)
+			_, _, ok, err := lego.RenewCert()
 			if err != nil {
-				if err.Error() == "no renewal" {
-					return nil
-				}
 				newError(err).AtError().WriteToLog()
 				return nil
 			}
-			p.Close()
-			p.Start()
+			if ok {
+				newError("Renew certs success, Reload panel").AtWarning().WriteToLog()
+				p.Close()
+				p.Start()
+			}
 		}
 	}
 

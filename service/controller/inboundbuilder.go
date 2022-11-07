@@ -14,7 +14,7 @@ import (
 	conf "github.com/v2fly/v2ray-core/v5/infra/conf/v4"
 
 	"github.com/thank243/v2rayS/api"
-	"github.com/thank243/v2rayS/common/legocmd"
+	"github.com/thank243/v2rayS/common/mylego"
 )
 
 // InboundBuilder build Inbound config for different protocol
@@ -163,35 +163,46 @@ func InboundBuilder(config *Config, nodeInfo *api.NodeInfo, tag string) (*core.I
 	return inboundDetourConfig.Build()
 }
 
-func getCertFile(certConfig *CertConfig) (certFile string, keyFile string, err error) {
-	if certConfig.CertMode == "file" {
+func getCertFile(certConfig *mylego.CertConfig) (string, string, error) {
+	switch certConfig.CertMode {
+	case "file":
 		if certConfig.CertFile == "" || certConfig.KeyFile == "" {
 			return "", "", fmt.Errorf("cert file path or key file path not exist")
 		}
 		return certConfig.CertFile, certConfig.KeyFile, nil
-	} else if certConfig.CertMode == "dns" {
-		lego, err := legocmd.New()
+	case "dns":
+		lego, err := mylego.New(certConfig)
 		if err != nil {
 			return "", "", err
 		}
-		certPath, keyPath, err := lego.DNSCert(certConfig.CertDomain, certConfig.Email, certConfig.Provider, certConfig.DNSEnv)
-		if err != nil {
-			return "", "", err
-		}
-		return certPath, keyPath, err
-	} else if certConfig.CertMode == "http" {
-		lego, err := legocmd.New()
-		if err != nil {
-			return "", "", err
-		}
-		certPath, keyPath, err := lego.HTTPCert(certConfig.CertDomain, certConfig.Email)
+		certPath, keyPath, err := lego.DNSCert()
 		if err != nil {
 			return "", "", err
 		}
 		return certPath, keyPath, err
+	case "http":
+		lego, err := mylego.New(certConfig)
+		if err != nil {
+			return "", "", err
+		}
+		certPath, keyPath, err := lego.HTTPCert()
+		if err != nil {
+			return "", "", err
+		}
+		return certPath, keyPath, err
+	case "tls":
+		lego, err := mylego.New(certConfig)
+		if err != nil {
+			return "", "", err
+		}
+		certPath, keyPath, err := lego.HTTPCert()
+		if err != nil {
+			return "", "", err
+		}
+		return certPath, keyPath, err
+	default:
+		return "", "", fmt.Errorf("unsupported certmode: %s", certConfig.CertMode)
 	}
-
-	return "", "", fmt.Errorf("unsupported certmode: %s", certConfig.CertMode)
 }
 
 func buildTrojanFallbacks(fallbackConfigs []*FallBackConfig) ([]*conf.TrojanInboundFallback, error) {
