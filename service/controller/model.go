@@ -33,7 +33,7 @@ type AutoSpeedLimitConfig struct {
 type FallBackConfig struct {
 	Type             string `mapstructure:"Type"`
 	Alpn             string `mapstructure:"Alpn"`
-	Path             string `mapstructure:"path"`
+	Path             string `mapstructure:"Path"`
 	Dest             string `mapstructure:"Dest"`
 	ProxyProtocolVer uint64 `mapstructure:"ProxyProtocolVer"`
 }

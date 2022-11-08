@@ -17,7 +17,7 @@ import (
 
 type Manager struct {
 	InboundRule         *sync.Map // Key: Tag, Value: []api.DetectRule
-	InboundDetectResult *sync.Map // key: Tag, Value: mapset.NewSet []api.DetectResult
+	InboundDetectResult *sync.Map // key: Tag, Value: mapSet.NewSet []api.DetectResult
 }
 
 func New() *Manager {
