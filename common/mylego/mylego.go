@@ -1,5 +1,7 @@
 package mylego
 
+//go:generate go run github.com/v2fly/v2ray-core/v5/common/errors/errorgen
+
 import (
 	"errors"
 	"fmt"
@@ -152,10 +154,10 @@ func checkCertFile(domain string) (string, string, error) {
 	keyPath := path.Join(defaultPath, "certificates", fmt.Sprintf("%s.key", domain))
 	certPath := path.Join(defaultPath, "certificates", fmt.Sprintf("%s.crt", domain))
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
-		return "", "", fmt.Errorf("cert key failed: %s", domain)
+		return "", "", newError("cert key failed: %s", domain).AtError()
 	}
 	if _, err := os.Stat(certPath); os.IsNotExist(err) {
-		return "", "", fmt.Errorf("cert cert failed: %s", domain)
+		return "", "", newError("cert cert failed: %s", domain).AtError()
 	}
 	absKeyPath, _ := filepath.Abs(keyPath)
 	absCertPath, _ := filepath.Abs(certPath)
