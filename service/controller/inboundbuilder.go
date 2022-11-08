@@ -180,17 +180,7 @@ func getCertFile(certConfig *mylego.CertConfig) (string, string, error) {
 			return "", "", err
 		}
 		return certPath, keyPath, err
-	case "http":
-		lego, err := mylego.New(certConfig)
-		if err != nil {
-			return "", "", err
-		}
-		certPath, keyPath, err := lego.HTTPCert()
-		if err != nil {
-			return "", "", err
-		}
-		return certPath, keyPath, err
-	case "tls":
+	case "http", "tls":
 		lego, err := mylego.New(certConfig)
 		if err != nil {
 			return "", "", err
