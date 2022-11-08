@@ -167,7 +167,7 @@ func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *r
 			exist, err := l.r.Exists(ctx, trimEmail).Result()
 			switch {
 			case err != nil:
-				log.Printf("Global limit failure, Redis: %v", err)
+				log.Printf("[%s] Global limit failure, Redis: %v", tag, err)
 				goto next
 			case exist == 0:
 				l.r.HSet(ctx, trimEmail, ip, uid)
