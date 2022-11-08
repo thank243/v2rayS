@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
-	"errors"
 	"log"
 	"net/url"
 	"os"
@@ -153,7 +152,7 @@ func (s *AccountsStorage) GetPrivateKey(keyType certcrypto.KeyType) crypto.Priva
 	accKeyPath := filepath.Join(s.keysPath, s.userID+".key")
 
 	if _, err := os.Stat(accKeyPath); os.IsNotExist(err) {
-		log.Printf("No key found for account %s. Generating a %s key.", s.userID, keyType)
+		newError("No key found for account %s. Generating a %s key.", s.userID, keyType).WriteToLog()
 		s.createKeysFolder()
 
 		privateKey, err := generatePrivateKey(accKeyPath, keyType)
@@ -161,7 +160,7 @@ func (s *AccountsStorage) GetPrivateKey(keyType certcrypto.KeyType) crypto.Priva
 			log.Panicf("Could not generate RSA private account key for account %s: %v", s.userID, err)
 		}
 
-		log.Printf("Saved key to %s", accKeyPath)
+		newError("Saved key to %s", accKeyPath).WriteToLog()
 		return privateKey
 	}
 
@@ -215,7 +214,7 @@ func loadPrivateKey(file string) (crypto.PrivateKey, error) {
 		return x509.ParseECPrivateKey(keyBlock.Bytes)
 	}
 
-	return nil, errors.New("unknown private key type")
+	return nil, newError("unknown private key type").AtError()
 }
 
 func tryRecoverRegistration(privateKey crypto.PrivateKey) (*registration.Resource, error) {

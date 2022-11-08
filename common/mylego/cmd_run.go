@@ -63,5 +63,5 @@ func obtainCertificate(domains []string, client *lego.Client) (*certificate.Reso
 		}
 		return client.Certificate.Obtain(request)
 	}
-	return nil, fmt.Errorf("not a valid domain")
+	return nil, newError("not a valid domain").AtError()
 }

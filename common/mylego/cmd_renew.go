@@ -39,7 +39,7 @@ func renewForDomains(domain string, client *lego.Client, certsStorage *Certifica
 
 	// This is just meant to be informal for the user.
 	timeLeft := cert.NotAfter.Sub(time.Now().UTC())
-	log.Printf("[%s] acme: Trying renewal with %d hours remaining", domain, int(timeLeft.Hours()))
+	newError("[%s] acme: Trying renewal with %d hours remaining", domain, int(timeLeft.Hours())).AtWarning().WriteToLog()
 
 	certDomains := certcrypto.ExtractDomains(cert)
 
