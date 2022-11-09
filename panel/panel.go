@@ -268,7 +268,7 @@ func (p *Panel) certMonitor() error {
 	for i := range nodesConfig {
 		certConfig := nodesConfig[i].ControllerConfig.CertConfig
 		// Check Cert
-		if certConfig.CertMode == "dns" || certConfig.CertMode == "http" {
+		if certConfig.CertMode == "dns" || certConfig.CertMode == "http" || certConfig.CertMode == "tls" {
 			lego, err := mylego.New(certConfig)
 			if err != nil {
 				newError(err).AtError().WriteToLog()
