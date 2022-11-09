@@ -5,10 +5,14 @@ package mylego
 import (
 	"errors"
 	"fmt"
+	"log"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/crypto/acme"
 )
 
 var defaultPath string
@@ -162,4 +166,27 @@ func checkCertFile(domain string) (string, string, error) {
 	absKeyPath, _ := filepath.Abs(keyPath)
 	absCertPath, _ := filepath.Abs(certPath)
 	return absCertPath, absKeyPath, nil
+}
+
+// newAccountsStorage Creates a new AccountsStorage.
+func (l *LegoCMD) newAccountsStorage() *AccountsStorage {
+	email := l.C.Email
+
+	serverURL, err := url.Parse(acme.LetsEncryptURL)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	rootPath := filepath.Join(l.path, baseAccountsRootFolderName)
+	serverPath := strings.NewReplacer(":", "_", "/", string(os.PathSeparator)).Replace(serverURL.Host)
+	accountsPath := filepath.Join(rootPath, serverPath)
+	rootUserPath := filepath.Join(accountsPath, email)
+
+	return &AccountsStorage{
+		userID:          email,
+		rootPath:        rootPath,
+		rootUserPath:    rootUserPath,
+		keysPath:        filepath.Join(rootUserPath, baseKeysFolderName),
+		accountFilePath: filepath.Join(rootUserPath, accountFileName),
+	}
 }

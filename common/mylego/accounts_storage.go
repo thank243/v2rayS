@@ -6,10 +6,8 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/go-acme/lego/v4/certcrypto"
 	"github.com/go-acme/lego/v4/lego"
@@ -64,27 +62,19 @@ type AccountsStorage struct {
 	accountFilePath string
 }
 
-// NewAccountsStorage Creates a new AccountsStorage.
-func NewAccountsStorage(l *LegoCMD) *AccountsStorage {
-	email := l.C.Email
+func (s *AccountsStorage) setup() (*Account, *lego.Client) {
+	privateKey := s.GetPrivateKey(certcrypto.EC256)
 
-	serverURL, err := url.Parse(acme.LetsEncryptURL)
-	if err != nil {
-		log.Panic(err)
+	var account *Account
+	if s.ExistsAccountFilePath() {
+		account = s.LoadAccount(privateKey)
+	} else {
+		account = &Account{Email: s.GetUserID(), key: privateKey}
 	}
 
-	rootPath := filepath.Join(l.path, baseAccountsRootFolderName)
-	serverPath := strings.NewReplacer(":", "_", "/", string(os.PathSeparator)).Replace(serverURL.Host)
-	accountsPath := filepath.Join(rootPath, serverPath)
-	rootUserPath := filepath.Join(accountsPath, email)
+	client := newClient(account, certcrypto.EC256)
 
-	return &AccountsStorage{
-		userID:          email,
-		rootPath:        rootPath,
-		rootUserPath:    rootUserPath,
-		keysPath:        filepath.Join(rootUserPath, baseKeysFolderName),
-		accountFilePath: filepath.Join(rootUserPath, accountFileName),
-	}
+	return account, client
 }
 
 func (s *AccountsStorage) ExistsAccountFilePath() bool {

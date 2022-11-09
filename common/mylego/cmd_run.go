@@ -21,10 +21,10 @@ backups of this folder is ideal.
 `
 
 func (l *LegoCMD) Run() error {
-	accountsStorage := NewAccountsStorage(l)
+	accountsStorage := l.newAccountsStorage()
 
-	account, client := setup(accountsStorage)
-	setupChallenges(l, client)
+	account, client := accountsStorage.setup()
+	l.setupChallenges(client)
 
 	if account.Registration == nil {
 		reg, err := client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
