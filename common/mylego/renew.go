@@ -46,6 +46,7 @@ func (l *LegoCMD) renewForDomains(client *lego.Client, certsStorage *Certificate
 	var privateKey crypto.PrivateKey
 	request := certificate.ObtainRequest{
 		Domains:    certDomains,
+		Bundle:     true,
 		PrivateKey: privateKey,
 	}
 	certRes, err := client.Certificate.Obtain(request)

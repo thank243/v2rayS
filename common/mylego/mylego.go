@@ -141,13 +141,11 @@ func (l *LegoCMD) RenewCert() (CertPath string, KeyPath string, ok bool, err err
 		return CertPath, KeyPath, ok, nil
 	}()
 
-	ok, err = l.Renew()
-	if err != nil {
+	if ok, err = l.Renew(); err != nil {
 		return
 	}
 
-	CertPath, KeyPath, err = checkCertFile(l.C.CertDomain)
-	if err != nil {
+	if CertPath, KeyPath, err = checkCertFile(l.C.CertDomain); err != nil {
 		return
 	}
 
@@ -155,6 +153,8 @@ func (l *LegoCMD) RenewCert() (CertPath string, KeyPath string, ok bool, err err
 }
 
 func checkCertFile(domain string) (string, string, error) {
+	strings.ReplaceAll(domain, "*", "_") // Replace wildcard "*" to "_"
+
 	keyPath := path.Join(defaultPath, "certificates", fmt.Sprintf("%s.key", domain))
 	certPath := path.Join(defaultPath, "certificates", fmt.Sprintf("%s.crt", domain))
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {

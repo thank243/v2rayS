@@ -160,28 +160,28 @@ func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *r
 
 		// Global device limit
 		if l.g.limit > 0 {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 			defer cancel()
 
-			trimEmail := strings.Split(email, "|")[1]
-			exist, err := l.r.Exists(ctx, trimEmail).Result()
-			switch {
-			case err != nil:
-				log.Printf("[%s] Global limit failure, Redis: %v", tag, err)
-				goto next
-			case exist == 0:
-				l.r.HSet(ctx, trimEmail, ip, uid)
+			trimEmail := email[strings.Index(email, "|")+1:]
+			if exists, err := l.r.Exists(ctx, trimEmail).Result(); err != nil {
+				newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
+			} else if exists == 0 {
+				l.r.SAdd(ctx, trimEmail, ip)
 				l.r.Expire(ctx, trimEmail, time.Duration(l.g.expiry)*time.Minute)
-			default:
-				l.r.HSet(ctx, trimEmail, ip, uid)
-				if l.r.HLen(ctx, trimEmail).Val() > int64(l.g.limit) {
-					l.r.HDel(ctx, trimEmail, ip)
-					return nil, false, true
+			} else {
+				if online, err := l.r.SIsMember(ctx, trimEmail, ip).Result(); err != nil {
+					newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
+				} else if !online {
+					l.r.SAdd(ctx, trimEmail, ip)
+					if l.r.SCard(ctx, trimEmail).Val() > int64(l.g.limit) {
+						l.r.SRem(ctx, trimEmail, ip)
+						return nil, false, true
+					}
 				}
 			}
 		}
 
-	next:
 		// Local device limit
 		ipMap := new(sync.Map)
 		ipMap.Store(ip, uid)
