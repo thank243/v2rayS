@@ -1,10 +1,14 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"reflect"
+	"sync"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 
 	core "github.com/v2fly/v2ray-core/v5"
 	"github.com/v2fly/v2ray-core/v5/common/protocol"
@@ -36,6 +40,7 @@ type Controller struct {
 	userList                *[]api.UserInfo
 	nodeInfoMonitorPeriodic *task.Periodic
 	userReportPeriodic      *task.Periodic
+	globalLimitPeriodic     *task.Periodic
 	limitedUsers            map[api.UserInfo]LimitInfo
 	warnedUsers             map[api.UserInfo]int
 	panelType               string
@@ -92,10 +97,6 @@ func (c *Controller) Start() error {
 	// sync controller userList
 	c.userList = userInfo
 
-	// Init global device limit
-	if c.config.GlobalDeviceLimitConfig == nil {
-		c.config.GlobalDeviceLimitConfig = &limiter.GlobalDeviceLimitConfig{Limit: 0}
-	}
 	// Add Limiter
 	if err := c.AddInboundLimiter(c.Tag, newNodeInfo.SpeedLimit, userInfo, c.config.GlobalDeviceLimitConfig); err != nil {
 		log.Print(err)
@@ -118,7 +119,6 @@ func (c *Controller) Start() error {
 		Interval: time.Duration(c.config.UpdatePeriodic) * time.Second,
 		Execute:  c.userInfoMonitor,
 	}
-
 	if c.config.AutoSpeedLimitConfig == nil {
 		c.config.AutoSpeedLimitConfig = &AutoSpeedLimitConfig{0, 0, 0, 0}
 	}
@@ -134,6 +134,16 @@ func (c *Controller) Start() error {
 	// Start userReport
 	log.Printf("%s Start report user status", c.logPrefix())
 	go c.userReportPeriodic.Start()
+
+	// Start global limit fetch
+	if !c.config.GlobalDeviceLimitConfig.Enable {
+		log.Printf("%s Start fectch gobal limit", c.logPrefix())
+		c.globalLimitPeriodic = &task.Periodic{
+			Interval: time.Duration(c.config.UpdatePeriodic) * time.Second,
+			Execute:  c.globalLimitFetch,
+		}
+		go c.globalLimitPeriodic.Start()
+	}
 
 	return nil
 }
@@ -151,6 +161,13 @@ func (c *Controller) Close() error {
 		err := c.userReportPeriodic.Close()
 		if err != nil {
 			log.Panicf("%s user report periodic close failed: %s", c.logPrefix(), err)
+		}
+	}
+	
+	if c.globalLimitPeriodic != nil {
+		err := c.globalLimitPeriodic.Close()
+		if err != nil {
+			log.Panicf("%s global limit periodic close failed: %s", c.logPrefix(), err)
 		}
 	}
 
@@ -563,4 +580,45 @@ func (c *Controller) buildNodeTag() string {
 
 func (c *Controller) logPrefix() string {
 	return fmt.Sprintf("[%s] %s(ID=%d)", c.clientInfo.APIHost, c.nodeInfo.NodeType, c.nodeInfo.NodeID)
+}
+
+// Fetch global limit periodically
+func (c *Controller) globalLimitFetch() (err error) {
+	if value, ok := c.dispatcher.Limiter.InboundInfo.Load(c.Tag); ok {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+		r := redis.NewClient(&redis.Options{
+			Addr:     c.config.GlobalDeviceLimitConfig.RedisAddr,
+			Password: c.config.GlobalDeviceLimitConfig.RedisPassword,
+			DB:       c.config.GlobalDeviceLimitConfig.RedisDB,
+		})
+
+		var (
+			cursor uint64
+			emails []string
+		)
+
+		inboundInfo := value.(*limiter.InboundInfo)
+		for {
+			if emails, cursor, err = r.Scan(ctx, cursor, "*", 1000).Result(); err != nil {
+				newError(err).AtError().WriteToLog()
+			}
+			for i := range emails {
+				email := emails[i]
+				ips := r.SMembers(ctx, email).Val()
+
+				for ii := range ips {
+					ip := ips[ii]
+					ipMap := new(sync.Map)
+					ipMap.Store(ip, 0)
+					inboundInfo.UserOnlineIP.LoadOrStore(email, ipMap)
+				}
+			}
+			if cursor == 0 {
+				break
+			}
+		}
+	}
+
+	return nil
 }

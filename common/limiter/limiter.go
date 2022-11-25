@@ -35,7 +35,7 @@ type Limiter struct {
 	InboundInfo *sync.Map // Key: Tag, Value: *InboundInfo
 	r           *redis.Client
 	g           struct {
-		limit  int
+		enable bool
 		expiry int
 	}
 }
@@ -48,15 +48,15 @@ func New() *Limiter {
 
 func (l *Limiter) AddInboundLimiter(tag string, nodeSpeedLimit uint64, userList *[]api.UserInfo, globalDeviceLimit *GlobalDeviceLimitConfig) error {
 	// global limit
-	if globalDeviceLimit.Limit > 0 {
-		log.Printf("[%s] Global limit: %d", tag, globalDeviceLimit.Limit)
+	if globalDeviceLimit.Enable {
+		log.Printf("[%s] Global limit: enable", tag)
 
 		l.r = redis.NewClient(&redis.Options{
 			Addr:     globalDeviceLimit.RedisAddr,
 			Password: globalDeviceLimit.RedisPassword,
 			DB:       globalDeviceLimit.RedisDB,
 		})
-		l.g.limit = globalDeviceLimit.Limit
+		l.g.enable = globalDeviceLimit.Enable
 		l.g.expiry = globalDeviceLimit.Expiry
 	}
 
@@ -145,51 +145,43 @@ func (l *Limiter) GetOnlineDevice(tag string) (*[]api.OnlineUser, error) {
 func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *rate.Limiter, SpeedLimit bool, Reject bool) {
 	if value, ok := l.InboundInfo.Load(tag); ok {
 		var (
-			userLimit        uint64 = 0
-			deviceLimit, uid int
+			userLimit   uint64 = 0
+			deviceLimit int
 		)
 
 		inboundInfo := value.(*InboundInfo)
 		nodeLimit := inboundInfo.NodeSpeedLimit
 		if v, ok := inboundInfo.UserInfo.Load(email); ok {
 			u := v.(UserInfo)
-			uid = u.UID
 			userLimit = u.SpeedLimit
 			deviceLimit = u.DeviceLimit
 		}
 
-		// Global device limit
-		if l.g.limit > 0 {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-			defer cancel()
-
-			trimEmail := email[strings.Index(email, "|")+1:]
-			if exists, err := l.r.Exists(ctx, trimEmail).Result(); err != nil {
-				newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
-			} else if exists == 0 {
-				l.r.SAdd(ctx, trimEmail, ip)
-				l.r.Expire(ctx, trimEmail, time.Duration(l.g.expiry)*time.Minute)
-			} else {
-				if online, err := l.r.SIsMember(ctx, trimEmail, ip).Result(); err != nil {
-					newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
-				} else if !online {
-					l.r.SAdd(ctx, trimEmail, ip)
-					if l.r.SCard(ctx, trimEmail).Val() > int64(l.g.limit) {
-						l.r.SRem(ctx, trimEmail, ip)
-						return nil, false, true
-					}
-				}
-			}
+		// Global limit email
+		if l.g.enable {
+			email = email[strings.Index(email, "|")+1:]
 		}
 
 		// Local device limit
 		ipMap := new(sync.Map)
-		ipMap.Store(ip, uid)
+		ipMap.Store(ip, 0)
 		// If any device is online
 		if v, ok := inboundInfo.UserOnlineIP.LoadOrStore(email, ipMap); ok {
 			ipMap := v.(*sync.Map)
 			// If this ip is a new device
-			if _, ok := ipMap.LoadOrStore(ip, uid); !ok {
+			if _, ok := ipMap.LoadOrStore(ip, 0); !ok {
+				// Global limit: add new IP to redis
+				if l.g.enable {
+					go func() {
+						ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+						defer cancel()
+
+						if err := l.r.SAdd(ctx, email, ip).Err(); err != nil {
+							newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
+						}
+					}()
+				}
+
 				counter := 0
 				ipMap.Range(func(key, value interface{}) bool {
 					counter++
@@ -200,6 +192,26 @@ func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *r
 					return nil, false, true
 				}
 			}
+		} else if l.g.enable {
+			go func() {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+				defer cancel()
+
+				if err := l.r.SAdd(ctx, email, ip).Err(); err != nil {
+					newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
+				} else {
+					online, err := l.r.Exists(ctx, email).Result()
+					if err != nil {
+						newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
+					} else {
+						if online == 0 {
+							if err := l.r.Expire(ctx, email, time.Duration(l.g.expiry)*time.Minute).Err(); err != nil {
+								newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
+							}
+						}
+					}
+				}
+			}()
 		}
 
 		// Speed limit

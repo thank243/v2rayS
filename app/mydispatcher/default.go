@@ -91,7 +91,7 @@ func (r *cachedReader) Interrupt() {
 
 // DefaultDispatcher is a default implementation of Dispatcher.
 type DefaultDispatcher struct {
-	ohm         outbound.Manager
+	obm         outbound.Manager
 	router      routing.Router
 	policy      policy.Manager
 	stats       stats.Manager
@@ -113,7 +113,7 @@ func init() {
 
 // Init initializes DefaultDispatcher.
 func (d *DefaultDispatcher) Init(config *Config, om outbound.Manager, router routing.Router, pm policy.Manager, sm stats.Manager) error {
-	d.ohm = om
+	d.obm = om
 	d.router = router
 	d.policy = pm
 	d.stats = sm
@@ -327,7 +327,7 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 
 	if forcedOutboundTag := session.GetForcedOutboundTagFromContext(ctx); forcedOutboundTag != "" {
 		ctx = session.SetForcedOutboundTagToContext(ctx, "")
-		if h := d.ohm.GetHandler(forcedOutboundTag); h != nil {
+		if h := d.obm.GetHandler(forcedOutboundTag); h != nil {
 			newError("taking platform initialized detour [", forcedOutboundTag, "] for [", destination, "]").WriteToLog(session.ExportIDToError(ctx))
 			handler = h
 		} else {
@@ -339,7 +339,7 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 	} else if d.router != nil {
 		if route, err := d.router.PickRoute(routingSession.AsRoutingContext(ctx)); err == nil {
 			tag := route.GetOutboundTag()
-			if h := d.ohm.GetHandler(tag); h != nil {
+			if h := d.obm.GetHandler(tag); h != nil {
 				newError("taking detour [", tag, "] for [", destination, "]").WriteToLog(session.ExportIDToError(ctx))
 				handler = h
 			} else {
@@ -351,7 +351,7 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 	}
 
 	if handler == nil {
-		handler = d.ohm.GetDefaultHandler()
+		handler = d.obm.GetDefaultHandler()
 	}
 
 	if handler == nil {
