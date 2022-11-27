@@ -145,27 +145,28 @@ func (l *Limiter) GetOnlineDevice(tag string) (*[]api.OnlineUser, error) {
 func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *rate.Limiter, SpeedLimit bool, Reject bool) {
 	if value, ok := l.InboundInfo.Load(tag); ok {
 		var (
-			userLimit   uint64 = 0
-			deviceLimit int
+			userLimit        uint64 = 0
+			deviceLimit, uid int
 		)
 
 		inboundInfo := value.(*InboundInfo)
 		nodeLimit := inboundInfo.NodeSpeedLimit
 		if v, ok := inboundInfo.UserInfo.Load(email); ok {
 			u := v.(UserInfo)
+			uid = u.UID
 			userLimit = u.SpeedLimit
 			deviceLimit = u.DeviceLimit
 		}
 
-		// Global limit: add an IP to redis if is new
+		// Global device limit
 		if l.g.enable {
 			email = email[strings.Index(email, "|")+1:]
 
 			go func() {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(15))
 				defer cancel()
 
-				if err := l.r.SAdd(ctx, email, ip).Err(); err != nil {
+				if err := l.r.HSet(ctx, email, ip, uid).Err(); err != nil {
 					newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
 				}
 
@@ -184,8 +185,8 @@ func (l *Limiter) GetUserBucket(tag string, email string, ip string) (limiter *r
 		// If any device is online
 		if v, ok := inboundInfo.UserOnlineIP.LoadOrStore(email, ipMap); ok {
 			ipMap := v.(*sync.Map)
-			// If this ip is a new device
-			if _, ok := ipMap.LoadOrStore(ip, 0); !ok {
+			// If this ip is a new device. if enable global limit will force check
+			if _, ok := ipMap.LoadOrStore(ip, 0); !ok || l.g.enable {
 				counter := 0
 				ipMap.Range(func(key, value interface{}) bool {
 					counter++

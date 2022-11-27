@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"sync"
 	"time"
 
@@ -31,24 +32,28 @@ type LimitInfo struct {
 }
 
 type Controller struct {
-	server                  *core.Instance
-	config                  *Config
-	clientInfo              api.ClientInfo
-	apiClient               api.API
-	nodeInfo                *api.NodeInfo
-	Tag                     string
-	userList                *[]api.UserInfo
-	nodeInfoMonitorPeriodic *task.Periodic
-	userReportPeriodic      *task.Periodic
-	globalLimitPeriodic     *task.Periodic
-	limitedUsers            map[api.UserInfo]LimitInfo
-	warnedUsers             map[api.UserInfo]int
-	panelType               string
-	ibm                     inbound.Manager
-	obm                     outbound.Manager
-	stm                     stats.Manager
-	dispatcher              *mydispatcher.DefaultDispatcher
-	startAt                 time.Time
+	server       *core.Instance
+	config       *Config
+	clientInfo   api.ClientInfo
+	apiClient    api.API
+	nodeInfo     *api.NodeInfo
+	Tag          string
+	userList     *[]api.UserInfo
+	tasks        []periodicTask
+	limitedUsers map[api.UserInfo]LimitInfo
+	warnedUsers  map[api.UserInfo]int
+	panelType    string
+	ibm          inbound.Manager
+	obm          outbound.Manager
+	stm          stats.Manager
+	dispatcher   *mydispatcher.DefaultDispatcher
+	startAt      time.Time
+	r            *redis.Client
+}
+
+type periodicTask struct {
+	tag string
+	*task.Periodic
 }
 
 // New return a Controller service with default parameters.
@@ -63,6 +68,15 @@ func New(server *core.Instance, api api.API, config *Config, panelType string) *
 		stm:        server.GetFeature(stats.ManagerType()).(stats.Manager),
 		dispatcher: server.GetFeature(routing.DispatcherType()).(*mydispatcher.DefaultDispatcher),
 		startAt:    time.Now(),
+	}
+
+	// Init global limit redis client
+	if config.GlobalDeviceLimitConfig.Enable {
+		controller.r = redis.NewClient(&redis.Options{
+			Addr:     config.GlobalDeviceLimitConfig.RedisAddr,
+			Password: config.GlobalDeviceLimitConfig.RedisPassword,
+			DB:       config.GlobalDeviceLimitConfig.RedisDB,
+		})
 	}
 
 	return controller
@@ -111,14 +125,7 @@ func (c *Controller) Start() error {
 			}
 		}
 	}
-	c.nodeInfoMonitorPeriodic = &task.Periodic{
-		Interval: time.Duration(c.config.UpdatePeriodic) * time.Second,
-		Execute:  c.nodeInfoMonitor,
-	}
-	c.userReportPeriodic = &task.Periodic{
-		Interval: time.Duration(c.config.UpdatePeriodic) * time.Second,
-		Execute:  c.userInfoMonitor,
-	}
+
 	if c.config.AutoSpeedLimitConfig == nil {
 		c.config.AutoSpeedLimitConfig = &AutoSpeedLimitConfig{0, 0, 0, 0}
 	}
@@ -127,22 +134,35 @@ func (c *Controller) Start() error {
 		c.warnedUsers = make(map[api.UserInfo]int)
 	}
 
-	// Start nodeInfoMonitor
-	log.Printf("%s Start monitor node status", c.logPrefix())
-	go c.nodeInfoMonitorPeriodic.Start()
+	c.tasks = append(c.tasks,
+		periodicTask{
+			tag: "node",
+			Periodic: &task.Periodic{
+				Interval: time.Duration(c.config.UpdatePeriodic) * time.Second,
+				Execute:  c.nodeInfoMonitor,
+			}},
+		periodicTask{
+			tag: "user",
+			Periodic: &task.Periodic{
+				Interval: time.Duration(c.config.UpdatePeriodic) * time.Second,
+				Execute:  c.userInfoMonitor,
+			}},
+	)
 
-	// Start userReport
-	log.Printf("%s Start report user status", c.logPrefix())
-	go c.userReportPeriodic.Start()
+	if c.config.GlobalDeviceLimitConfig.Enable {
+		c.tasks = append(c.tasks,
+			periodicTask{
+				tag: "global limit",
+				Periodic: &task.Periodic{
+					Interval: time.Duration(c.config.UpdatePeriodic) * time.Second,
+					Execute:  c.globalLimitFetch,
+				},
+			})
+	}
 
-	// Start global limit fetch
-	if !c.config.GlobalDeviceLimitConfig.Enable {
-		log.Printf("%s Start fectch gobal limit", c.logPrefix())
-		c.globalLimitPeriodic = &task.Periodic{
-			Interval: time.Duration(c.config.UpdatePeriodic) * time.Second,
-			Execute:  c.globalLimitFetch,
-		}
-		go c.globalLimitPeriodic.Start()
+	for i := range c.tasks {
+		log.Printf("%s Start %s periodic task", c.logPrefix(), c.tasks[i].tag)
+		go c.tasks[i].Start()
 	}
 
 	return nil
@@ -150,24 +170,11 @@ func (c *Controller) Start() error {
 
 // Close implement the Close() function of the service interface
 func (c *Controller) Close() error {
-	if c.nodeInfoMonitorPeriodic != nil {
-		err := c.nodeInfoMonitorPeriodic.Close()
-		if err != nil {
-			log.Panicf("%s node info periodic close failed: %s", c.logPrefix(), err)
-		}
-	}
-
-	if c.userReportPeriodic != nil {
-		err := c.userReportPeriodic.Close()
-		if err != nil {
-			log.Panicf("%s user report periodic close failed: %s", c.logPrefix(), err)
-		}
-	}
-	
-	if c.globalLimitPeriodic != nil {
-		err := c.globalLimitPeriodic.Close()
-		if err != nil {
-			log.Panicf("%s global limit periodic close failed: %s", c.logPrefix(), err)
+	for i := range c.tasks {
+		if c.tasks[i].Periodic != nil {
+			if err := c.tasks[i].Periodic.Close(); err != nil {
+				log.Panicf("%s %s periodic task close failed: %s", c.logPrefix(), c.tasks[i].tag, err)
+			}
 		}
 	}
 
@@ -587,11 +594,6 @@ func (c *Controller) globalLimitFetch() (err error) {
 	if value, ok := c.dispatcher.Limiter.InboundInfo.Load(c.Tag); ok {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancel()
-		r := redis.NewClient(&redis.Options{
-			Addr:     c.config.GlobalDeviceLimitConfig.RedisAddr,
-			Password: c.config.GlobalDeviceLimitConfig.RedisPassword,
-			DB:       c.config.GlobalDeviceLimitConfig.RedisDB,
-		})
 
 		var (
 			cursor uint64
@@ -600,20 +602,31 @@ func (c *Controller) globalLimitFetch() (err error) {
 
 		inboundInfo := value.(*limiter.InboundInfo)
 		for {
-			if emails, cursor, err = r.Scan(ctx, cursor, "*", 1000).Result(); err != nil {
+			if emails, cursor, err = c.r.Scan(ctx, cursor, "*", 1000).Result(); err != nil {
 				newError(err).AtError().WriteToLog()
 			}
+			pipe := c.r.Pipeline()
+
+			cmdMap := make(map[string]*redis.StringStringMapCmd)
 			for i := range emails {
 				email := emails[i]
-				ips := r.SMembers(ctx, email).Val()
+				cmdMap[email] = pipe.HGetAll(ctx, email)
+			}
 
-				for ii := range ips {
-					ip := ips[ii]
-					ipMap := new(sync.Map)
-					ipMap.Store(ip, 0)
-					inboundInfo.UserOnlineIP.LoadOrStore(email, ipMap)
+			if _, err := pipe.Exec(ctx); err != nil {
+				newError(fmt.Sprintf("Redis: %v", err)).AtError().WriteToLog()
+			} else {
+				for k := range cmdMap {
+					ips := cmdMap[k].Val()
+					for i := range ips {
+						uid, _ := strconv.Atoi(ips[i])
+						ipMap := new(sync.Map)
+						ipMap.Store(i, uid)
+						inboundInfo.UserOnlineIP.LoadOrStore(k, ipMap)
+					}
 				}
 			}
+
 			if cursor == 0 {
 				break
 			}
