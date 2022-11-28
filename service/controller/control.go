@@ -1,0 +1,163 @@
+package controller
+
+//go:generate go run github.com/v2fly/v2ray-core/v5/common/errors/errorgen
+
+import (
+	"context"
+	"fmt"
+
+	core "github.com/v2fly/v2ray-core/v5"
+	"github.com/v2fly/v2ray-core/v5/common/protocol"
+	"github.com/v2fly/v2ray-core/v5/features/inbound"
+	"github.com/v2fly/v2ray-core/v5/features/outbound"
+	"github.com/v2fly/v2ray-core/v5/features/stats"
+	"github.com/v2fly/v2ray-core/v5/proxy"
+
+	"github.com/thank243/v2rayS/api"
+	"github.com/thank243/v2rayS/common/limiter"
+)
+
+func (c *Controller) removeInbound(tag string) error {
+	err := c.ihm.RemoveHandler(context.Background(), tag)
+	return err
+}
+
+func (c *Controller) removeOutbound(tag string) error {
+	err := c.ohm.RemoveHandler(context.Background(), tag)
+	return err
+}
+
+func (c *Controller) addInbound(config *core.InboundHandlerConfig) error {
+	rawHandler, err := core.CreateObject(c.server, config)
+	if err != nil {
+		return err
+	}
+	handler, ok := rawHandler.(inbound.Handler)
+	if !ok {
+		return fmt.Errorf("not an InboundHandler: %s", err)
+	}
+	if err := c.ihm.AddHandler(context.Background(), handler); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Controller) addOutbound(config *core.OutboundHandlerConfig) error {
+	rawHandler, err := core.CreateObject(c.server, config)
+	if err != nil {
+		return err
+	}
+	handler, ok := rawHandler.(outbound.Handler)
+	if !ok {
+		return fmt.Errorf("not an InboundHandler: %s", err)
+	}
+	if err := c.ohm.AddHandler(context.Background(), handler); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Controller) addUsers(users []*protocol.User, tag string) error {
+	handler, err := c.ihm.GetHandler(context.Background(), tag)
+	if err != nil {
+		return fmt.Errorf("no such inbound tag: %s", err)
+	}
+	inboundInstance, ok := handler.(proxy.GetInbound)
+	if !ok {
+		return fmt.Errorf("handler %s has not implemented proxy.GetInbound", tag)
+	}
+
+	userManager, ok := inboundInstance.GetInbound().(proxy.UserManager)
+	if !ok {
+		return fmt.Errorf("handler %s has not implemented proxy.UserManager", tag)
+	}
+	for _, item := range users {
+		mUser, err := item.ToMemoryUser()
+		if err != nil {
+			return err
+		}
+		err = userManager.AddUser(context.Background(), mUser)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Controller) removeUsers(users []string, tag string) error {
+	handler, err := c.ihm.GetHandler(context.Background(), tag)
+	if err != nil {
+		return fmt.Errorf("no such inbound tag: %s", err)
+	}
+	inboundInstance, ok := handler.(proxy.GetInbound)
+	if !ok {
+		return fmt.Errorf("handler %s is not implement proxy.GetInbound", tag)
+	}
+
+	userManager, ok := inboundInstance.GetInbound().(proxy.UserManager)
+	if !ok {
+		return fmt.Errorf("handler %s is not implement proxy.UserManager", err)
+	}
+	for _, email := range users {
+		err = userManager.RemoveUser(context.Background(), email)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Controller) getTraffic(email string) (up int64, down int64, upCounter stats.Counter, downCounter stats.Counter) {
+	upName := "user>>>" + email + ">>>traffic>>>uplink"
+	downName := "user>>>" + email + ">>>traffic>>>downlink"
+	upCounter = c.stm.GetCounter(upName)
+	downCounter = c.stm.GetCounter(downName)
+	if upCounter != nil && upCounter.Value() != 0 {
+		up = upCounter.Value()
+	} else {
+		upCounter = nil
+	}
+	if downCounter != nil && downCounter.Value() != 0 {
+		down = downCounter.Value()
+	} else {
+		downCounter = nil
+	}
+	return up, down, upCounter, downCounter
+}
+
+func (c *Controller) resetTraffic(upCounterList *[]stats.Counter, downCounterList *[]stats.Counter) {
+	for _, upCounter := range *upCounterList {
+		upCounter.Set(0)
+	}
+	for _, downCounter := range *downCounterList {
+		downCounter.Set(0)
+	}
+}
+
+func (c *Controller) AddInboundLimiter(tag string, nodeSpeedLimit uint64, userList *[]api.UserInfo, globalDeviceLimitConfig *limiter.GlobalDeviceLimitConfig) error {
+	err := c.dispatcher.Limiter.AddInboundLimiter(tag, nodeSpeedLimit, userList, globalDeviceLimitConfig)
+	return err
+}
+
+func (c *Controller) UpdateInboundLimiter(tag string, updatedUserList *[]api.UserInfo) error {
+	err := c.dispatcher.Limiter.UpdateInboundLimiter(tag, updatedUserList)
+	return err
+}
+
+func (c *Controller) DeleteInboundLimiter(tag string) error {
+	err := c.dispatcher.Limiter.DeleteInboundLimiter(tag)
+	return err
+}
+
+func (c *Controller) GetOnlineDevice(tag string) (*[]api.OnlineUser, error) {
+	return c.dispatcher.Limiter.GetOnlineDevice(tag)
+}
+
+func (c *Controller) UpdateRule(tag string, newRuleList []api.DetectRule) error {
+	err := c.dispatcher.RuleManager.UpdateRule(tag, newRuleList)
+	return err
+}
+
+func (c *Controller) GetDetectResult(tag string) (*[]api.DetectResult, error) {
+	return c.dispatcher.RuleManager.GetDetectResult(tag)
+}
