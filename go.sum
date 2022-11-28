@@ -187,8 +187,8 @@ github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 h1:Mn26/9ZMNWSw9C9ER
 github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/gin-contrib/sse v0.1.0/go.mod h1:RHrZQHXnP2xjPF+u1gW/2HnVO7nvIa9PG3Gm+fLHvGI=
 github.com/gin-gonic/gin v1.7.4/go.mod h1:jD2toBW3GZUr5UMcdrwQA10I7RuaFOl/SGeDjXkfUtY=
-github.com/go-acme/lego/v4 v4.9.0 h1:8Hjj44IqRS7cigshMyFQ+0pIZvwgkG/+9A0UnNh7G8A=
-github.com/go-acme/lego/v4 v4.9.0/go.mod h1:g3JRUyWS3L/VObpp4bCxzJftKyf/Wba8QrSSnoiqjg4=
+github.com/go-acme/lego/v4 v4.9.1 h1:n9Z5MQwANeGSQKlVE3bEh9SDvAySK9oVYOKCGCESqQE=
+github.com/go-acme/lego/v4 v4.9.1/go.mod h1:g3JRUyWS3L/VObpp4bCxzJftKyf/Wba8QrSSnoiqjg4=
 github.com/go-chi/chi/v5 v5.0.0/go.mod h1:BBug9lr0cqtdAhsu6R4AAdvufI0/XBzAQSsUqJpoZOs=
 github.com/go-chi/chi/v5 v5.0.7 h1:rDTPXLDHGATaeHvVlLcR4Qe0zftYethFucbjVQ1PxU8=
 github.com/go-chi/chi/v5 v5.0.7/go.mod h1:DslCQbL2OYiznFReuXYUmQ2hGd1aDpCnlMNITLSKoi8=
