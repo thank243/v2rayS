@@ -11,7 +11,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/imdario/mergo v0.3.13
 	github.com/r3labs/diff/v3 v3.0.0
-	github.com/shirou/gopsutil/v3 v3.22.10
+	github.com/shirou/gopsutil/v3 v3.22.11
 	github.com/spf13/viper v1.14.0
 	github.com/stretchr/testify v1.8.1
 	github.com/v2fly/v2ray-core/v5 v5.1.0
@@ -162,8 +162,8 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.490 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/dnspod v1.0.490 // indirect
-	github.com/tklauser/go-sysconf v0.3.10 // indirect
-	github.com/tklauser/numcpus v0.4.0 // indirect
+	github.com/tklauser/go-sysconf v0.3.11 // indirect
+	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/transip/gotransip/v6 v6.17.0 // indirect
 	github.com/v2fly/BrowserBridge v0.0.0-20210430233438-0570fc1d7d08 // indirect
 	github.com/v2fly/VSign v0.0.0-20201108000810-e2adc24bf848 // indirect
