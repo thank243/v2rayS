@@ -743,8 +743,8 @@ github.com/v2fly/VSign v0.0.0-20201108000810-e2adc24bf848 h1:p1UzXK6VAutXFFQMnre
 github.com/v2fly/VSign v0.0.0-20201108000810-e2adc24bf848/go.mod h1:p80Bv154ZtrGpXMN15slDCqc9UGmfBuUzheDFBYaW/M=
 github.com/v2fly/ss-bloomring v0.0.0-20210312155135-28617310f63e h1:5QefA066A1tF8gHIiADmOVOV5LS43gt3ONnlEl3xkwI=
 github.com/v2fly/ss-bloomring v0.0.0-20210312155135-28617310f63e/go.mod h1:5t19P9LBIrNamL6AcMQOncg/r10y3Pc01AbHeMhwlpU=
-github.com/v2fly/v2ray-core/v5 v5.2.0 h1:ojN1Ol/lJisKBkCUJsX41y3EIBoVxjP7YCZM94BE6EQ=
-github.com/v2fly/v2ray-core/v5 v5.2.0/go.mod h1:Fj86lXnL3Xh0TxXB3bjLJhExYbbMUiMMxHJF09aGDko=
+github.com/v2fly/v2ray-core/v5 v5.2.1 h1:bWc0cxvzCbbcsIE7/C+NFeUytQJYWgjtcRMG242I2Rs=
+github.com/v2fly/v2ray-core/v5 v5.2.1/go.mod h1:7MBSerlH+Wyq9Bvm90txc8Ey9C9MAwkM+ZtkMbKT0Zo=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.2.1/go.mod h1:KHLXt3tVN2HBp8eijSv/kGJopbvo7S+qRAEEKiv+SiQ=
 github.com/vinyldns/go-vinyldns v0.9.16 h1:GZJStDkcCk1F1AcRc64LuuMh+ENL8pHA0CVd4ulRMcQ=
