@@ -10,7 +10,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/imdario/mergo v0.3.13
-	github.com/r3labs/diff/v3 v3.0.0
+	github.com/r3labs/diff/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.22.12
 	github.com/spf13/viper v1.8.1
 	github.com/stretchr/testify v1.8.1
@@ -166,7 +166,8 @@ require (
 	github.com/v2fly/VSign v0.0.0-20201108000810-e2adc24bf848 // indirect
 	github.com/v2fly/ss-bloomring v0.0.0-20210312155135-28617310f63e // indirect
 	github.com/vinyldns/go-vinyldns v0.9.16 // indirect
-	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
+	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
+	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/vultr/govultr/v2 v2.17.2 // indirect
 	github.com/xiaokangwang/VLite v0.0.0-20220418190619-cff95160a432 // indirect
 	github.com/xtaci/smux v1.5.15 // indirect
