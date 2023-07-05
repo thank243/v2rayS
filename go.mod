@@ -11,9 +11,9 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/imdario/mergo v0.3.16
 	github.com/r3labs/diff/v3 v3.0.1
-	github.com/shirou/gopsutil/v3 v3.23.5
+	github.com/shirou/gopsutil/v3 v3.23.6
 	github.com/spf13/viper v1.8.1
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	github.com/v2fly/v2ray-core/v5 v5.3.0
 	golang.org/x/crypto v0.10.0
 	golang.org/x/net v0.11.0
