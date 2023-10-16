@@ -9,7 +9,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-acme/lego/v4 v4.14.2
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/go-resty/resty/v2 v2.9.1
+	github.com/go-resty/resty/v2 v2.10.0
 	github.com/r3labs/diff/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.23.9
 	github.com/spf13/viper v1.17.0
