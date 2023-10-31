@@ -14,7 +14,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.23.9
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
-	github.com/v2fly/v2ray-core/v5 v5.9.0
+	github.com/v2fly/v2ray-core/v5 v5.10.1
 	golang.org/x/crypto v0.14.0
 	golang.org/x/net v0.17.0
 	golang.org/x/time v0.3.0
@@ -199,7 +199,7 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/pquerna/otp v1.4.0 // indirect
 	github.com/quic-go/qtls-go1-20 v0.3.4 // indirect
-	github.com/quic-go/quic-go v0.39.0 // indirect
+	github.com/quic-go/quic-go v0.39.3 // indirect
 	github.com/riobard/go-bloom v0.0.0-20200614022211-cdc8013cb5b3 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sacloud/api-client-go v0.2.8 // indirect
