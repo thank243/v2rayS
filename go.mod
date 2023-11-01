@@ -11,7 +11,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-resty/resty/v2 v2.10.0
 	github.com/r3labs/diff/v3 v3.0.1
-	github.com/shirou/gopsutil/v3 v3.23.9
+	github.com/shirou/gopsutil/v3 v3.23.10
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
 	github.com/v2fly/v2ray-core/v5 v5.10.1
