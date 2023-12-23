@@ -12,7 +12,7 @@ require (
 	github.com/go-resty/resty/v2 v2.10.0
 	github.com/r3labs/diff/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.23.11
-	github.com/spf13/viper v1.18.1
+	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	github.com/v2fly/v2ray-core/v5 v5.13.0
 	golang.org/x/crypto v0.17.0
