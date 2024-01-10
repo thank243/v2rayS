@@ -199,7 +199,7 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/pquerna/otp v1.4.0 // indirect
 	github.com/quic-go/qtls-go1-20 v0.4.1 // indirect
-	github.com/quic-go/quic-go v0.40.0 // indirect
+	github.com/quic-go/quic-go v0.40.1 // indirect
 	github.com/riobard/go-bloom v0.0.0-20200614022211-cdc8013cb5b3 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sacloud/api-client-go v0.2.8 // indirect
